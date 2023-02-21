@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import streamlit as st
 
 # importando os dados
-dados = pd.read_csv ('dados.csv')
+data = pd.read_csv ('dados.csv')
 
 #gráfico de linhas dos dados de temperatura usando Matplotlib
 st.title("Dados da estação meteorológica")
