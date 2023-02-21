@@ -38,7 +38,7 @@ ax.plot(daily_avg_temp.index, daily_avg_temp.values)
 ax.set_xlabel('Data')
 ax.set_ylabel('Temperatura Média (°C)')
 ax.set_title('Temperatura Média por Dia')
-ax.grid(True)
+
 
 # Exibir o gráfico no Streamlit
 st.pyplot(fig)
