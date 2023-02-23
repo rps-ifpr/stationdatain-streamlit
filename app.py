@@ -39,10 +39,28 @@ ax.set_xlabel('Data')
 ax.set_ylabel('Temperatura Média (°C)')
 ax.set_title('Temperatura Média por Dia')
 
-
 # Exibir o gráfico no Streamlit
 st.pyplot(fig)
 
+# Criar um slider na barra lateral
+temp_min = int(df["Indoor Temperature(°C)"].min())
+temp_max = int(df["Indoor Temperature(°C)"].max())
+temp_default = int(df["Indoor Temperature(°C)"].mean())
+
+temperature = st.sidebar.slider("Selecione a temperatura interna (°C)", temp_min, temp_max, temp_default)
+
+# Filtrar dados pelo valor do controle deslizante
+filtered_data = df[df["Indoor Temperature(°C)"] == temperature]
+
+# Criar um gráfico de linhas com a temperatura interna ao longo do tempo
+fig, ax = plt.subplots()
+ax.plot(filtered_data["Time"], filtered_data["Indoor Temperature(°C)"])
+ax.set_xlabel("Tempo")
+ax.set_ylabel("Temperatura interna (°C)")
+ax.set_title("Temperatura interna ao longo do tempo")
+
+# Exibir gráfico com o Streamlit
+st.pyplot(fig)
 
 
 
