@@ -23,16 +23,17 @@ def correlation_plot():
     sns.heatmap(df.corr(), annot=True, cmap='coolwarm', linewidths=.5, ax=ax)
     st.pyplot(fig)
 
-st.sidebar.header('Selecione as colunas:')
-columns = st.sidebar.multiselect('', df.columns)
+# Filtro na sidebar para selecionar as linhas de temperatura
+st.sidebar.header('Filtro de Temperatura')
+temp_columns = ['Indoor Temperature(°C)', 'Outdoor Temperature(°C)', 'DewPoint(°C)', 'WindChill(°C)']
+selected_columns = st.sidebar.multiselect('Selecione as linhas de temperatura', temp_columns)
 
-if columns:
-    new_df = df[columns]
-    st.header('Gráfico de Correlação:')
-    correlation_plot(new_df)
+if selected_columns:
+    new_df = df[selected_columns]
+    title = 'Correlação entre as variáveis de temperatura selecionadas'
+    correlation_plot(new_df, title)
 
-
-# Plota o heatmap
+# Plota o heatmap com todas as variáveis
 plt.figure(figsize=(10, 8))
 sns.heatmap(corr, annot=True, cmap='coolwarm')
 plt.title('Correlação entre as variáveis selecionadas')
