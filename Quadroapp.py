@@ -92,9 +92,9 @@ st.write(df_clean.head())
 
 # Definindo as variáveis explicativas e a variável alvo
 explanatory_variables = ['temp_interna']
-target_variable = ['umidade_interna']
+target_variable = ['temp_externa']
 
-# Treinando o modelo
+# Treinando o modelo Regressão Linear
 reg = LinearRegression()
 reg.fit(df_clean[explanatory_variables], df_clean[target_variable])
 
@@ -107,5 +107,5 @@ fig, ax = plt.subplots()
 ax.scatter(df_clean[explanatory_variables], df_clean[target_variable])
 ax.plot(df_clean[explanatory_variables], reg.predict(df_clean[explanatory_variables]), color='red')
 ax.set_xlabel('Temperatura interna (°C)')
-ax.set_ylabel('umidade_interna')
+ax.set_ylabel('temp_externa')
 st.pyplot(fig)
