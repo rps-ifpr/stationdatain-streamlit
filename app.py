@@ -72,12 +72,11 @@ num_cols = df.select_dtypes(include=['float64', 'int64']).columns
 num_cols = num_cols.drop(['id', 'intervalo','chuva_hora','chuva_semana','chuva_mes','chuva_24h'])
 
 st.title("Estação Meteorológica IFPR-Campus Capanema")
-st.write("Aqui estão os dados da estação Local:")
 
 # criando dataframe de correlação
 corr = df_clean[num_cols].corr()
 # Plotando o gráfico de correlação
-st.write("Gráfico de correlação dos dados sem outliers")
+st.write(f"<p style='font-size: 25px'>{'Gráfico de correlação dos dados sem outliers'}</p>", unsafe_allow_html=True)
 fig, ax = plt.subplots(figsize=(10, 10))
 sns.heatmap(corr, annot=True, cmap="coolwarm", ax=ax)
 st.pyplot(fig)
@@ -88,26 +87,45 @@ def correlation_plot():
     st.pyplot(fig)
 
 # Exibindo os dados
+st.write(f"<p style='font-size: 25px'>{'Aqui são apresentados os dados em tabela da estação Local:'}</p>", unsafe_allow_html=True)
+
 st.write(df_clean.head())
 
 # Definindo as variáveis explicativas e a variável alvo
-explanatory_variables = ['temp_externa']
-target_variable = ['umidade_interna']
-
-# Treinando o modelo
+explanatory_variables = ['pressao_absoluta']
+target_variable = ['temp_externa']
+# Treinando o modelo Regressão Linear
 reg = LinearRegression()
 reg.fit(df_clean[explanatory_variables], df_clean[target_variable])
+st.write(f"<p style='font-size: 25px'>{'Gráfico com a regressão linear 1'}</p>", unsafe_allow_html=True)
 
 # Exibindo o coeficiente e o intercepto
 st.write(f'Coeficiente: {reg.coef_[0]:}')
 st.write(f'Intercepto: {reg.intercept_:}')
-
-# Exibindo o gráfico com a regressão linear
+# Exibindo o gráfico com a regressão linear 1
 fig, ax = plt.subplots()
 ax.scatter(df_clean[explanatory_variables], df_clean[target_variable])
 ax.plot(df_clean[explanatory_variables], reg.predict(df_clean[explanatory_variables]), color='red')
-ax.set_xlabel('Temperatura externa (°C)')
-ax.set_ylabel('umidade_interna')
+ax.set_xlabel('Pressao Absoluta')
+ax.set_ylabel('Temperatura Externa')
+st.pyplot(fig)
+
+# Definindo as variáveis explicativas e a variável alvo
+explanatory_variables = ['pressao_relativa']
+target_variable = ['temp_externa']
+# Treinando o modelo Regressão Linear
+reg = LinearRegression()
+reg.fit(df_clean[explanatory_variables], df_clean[target_variable])
+st.write(f"<p style='font-size: 25px'>{'Gráfico com a regressão linear 2'}</p>", unsafe_allow_html=True)
+# Exibindo o coeficiente e o intercepto
+st.write(f'Coeficiente: {reg.coef_[0]:}')
+st.write(f'Intercepto: {reg.intercept_:}')
+# Exibindo o gráfico com a regressão linear 2
+fig, ax = plt.subplots()
+ax.scatter(df_clean[explanatory_variables], df_clean[target_variable])
+ax.plot(df_clean[explanatory_variables], reg.predict(df_clean[explanatory_variables]), color='red')
+ax.set_xlabel('Pressao Relativa')
+ax.set_ylabel('Temperatura Externa')
 st.pyplot(fig)
 
 
