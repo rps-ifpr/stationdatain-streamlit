@@ -1,6 +1,5 @@
 import pandas as pd
 import seaborn as sns
-from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
 import streamlit as st
 
@@ -62,9 +61,6 @@ def remove_outliers_iqr(df, multiplier=1.5):
 # Removendo os outliers
 df_clean = remove_outliers_iqr(df)
 
-# Removendo valores nulos
-df_clean = df_clean.dropna()
-
 # selecionando apenas colunas numéricas
 num_cols = df.select_dtypes(include=['float64', 'int64']).columns
 
@@ -74,7 +70,19 @@ num_cols = num_cols.drop(['id', 'intervalo','chuva_hora','chuva_semana','chuva_m
 st.title("Estação Meteorológica IFPR-Campus Capanema")
 st.write("Aqui estão os dados da estação Local:")
 
-# criando dataframe de correlação
+# criando dataframe de correlação 1
+corr_df = df[num_cols].corr()
+# Plotando o gráfico de correlação
+st.write("Gráfico de correlação dos dados")
+fig, ax = plt.subplots(figsize=(10, 10))
+sns.heatmap(corr_df, annot=True, cmap="coolwarm", ax=ax)
+st.pyplot(fig)
+def correlation_plot():
+    fig, ax = plt.subplots(figsize=(10,10))
+    sns.heatmap(corr_df(), annot=True, cmap='coolwarm', ax=ax)
+    st.pyplot(fig)
+
+# criando dataframe de correlação 2
 corr = df_clean[num_cols].corr()
 # Plotando o gráfico de correlação
 st.write("Gráfico de correlação dos dados sem outliers")
@@ -87,29 +95,11 @@ def correlation_plot():
     sns.heatmap(corr(), annot=True, cmap='coolwarm', ax=ax)
     st.pyplot(fig)
 
-# Exibindo os dados
-st.write(df_clean.head())
-
-# Definindo as variáveis explicativas e a variável alvo
-explanatory_variables = ['temp_externa']
-target_variable = ['umidade_interna']
-
-# Treinando o modelo
-reg = LinearRegression()
-reg.fit(df_clean[explanatory_variables], df_clean[target_variable])
-
-# Exibindo o coeficiente e o intercepto
-st.write(f'Coeficiente: {reg.coef_[0]:}')
-st.write(f'Intercepto: {reg.intercept_:}')
-
-# Exibindo o gráfico com a regressão linear
-fig, ax = plt.subplots()
-ax.scatter(df_clean[explanatory_variables], df_clean[target_variable])
-ax.plot(df_clean[explanatory_variables], reg.predict(df_clean[explanatory_variables]), color='red')
-ax.set_xlabel('Temperatura externa (°C)')
-ax.set_ylabel('umidade_interna')
-st.pyplot(fig)
-
-
-
-
+# Filtro na sidebar para selecionar as linhas de temperatura
+st.sidebar.header('Filtro de Temperatura')
+temp_columns = ['Indoor Temperature(°C)', 'Outdoor Temperature(°C)', 'DewPoint(°C)', 'WindChill(°C)']
+selected_columns = st.sidebar.multiselect('Selecione as linhas de temperatura', temp_columns)
+if selected_columns:
+    new_df = df[selected_columns]
+    title = 'Correlação entre as variáveis de temperatura selecionadas'
+    correlation_plot(new_df, title)
