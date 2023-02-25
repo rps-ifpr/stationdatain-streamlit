@@ -64,7 +64,7 @@ df_clean = remove_outliers_iqr(df)
 # selecionando apenas colunas numéricas
 num_cols = df.select_dtypes(include=['float64', 'int64']).columns
 
-# removendo colunas 'id' e 'Intervalo'
+# removendo colunas desnecessárias
 num_cols = num_cols.drop(['id', 'intervalo','chuva_hora','chuva_semana','chuva_mes','chuva_24h'])
 
 st.title("Estação Meteorológica IFPR-Campus Capanema")
