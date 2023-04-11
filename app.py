@@ -116,14 +116,16 @@ target_variable = ['temp_externa']
 # Treinando o modelo Regressão Linear
 reg = LinearRegression()
 reg.fit(df_clean[explanatory_variables], df_clean[target_variable])
-st.write(f"<p style='font-size: 25px'>{'Gráfico com a regressão linear 2'}</p>", unsafe_allow_html=True)
+st.write(f"<p style='font-size: 25px'>{'Gráfico com a regressão linear 2'}</p>", 
+         unsafe_allow_html=True)
 # Exibindo o coeficiente e o intercepto
 st.write(f'Coeficiente: {reg.coef_[0]:}')
 st.write(f'Intercepto: {reg.intercept_:}')
 # Exibindo o gráfico com a regressão linear 2
 fig, ax = plt.subplots()
 ax.scatter(df_clean[explanatory_variables], df_clean[target_variable])
-ax.plot(df_clean[explanatory_variables], reg.predict(df_clean[explanatory_variables]), color='red')
+ax.plot(df_clean[explanatory_variables], reg.predict(df_clean[explanatory_variables]), 
+        color='red')
 ax.set_xlabel('Pressao Relativa')
 ax.set_ylabel('Temperatura Externa')
 st.pyplot(fig)
