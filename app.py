@@ -21,24 +21,24 @@ df['WindChill(°C)'] = pd.to_numeric(df['WindChill(°C)'], errors='coerce')
 
 # criando o dicionário com os novos nomes
 df_novo = {'n': 'id',
-             'Time': 'data',
+             'Time': 'date',
              'Interval': 'intervalo',
-             'Indoor Temperature(°C)': 'temp_interna',
-             'Indoor Humidity(%)': 'umidade_interna',
-             'Outdoor Temperature(°C)': 'temp_externa',
-             'Outdoor Humidity(%)': 'umidade_externa',
-             'Relative Pressure(mmHg)': 'pressao_relativa',
-             'Absolute Pressure(mmHg)': 'pressao_absoluta',
-             'Wind Speed(km/h)': 'velocidade_vento',
-             'Gust(km/h)': 'rajada_vento',
-             'Wind Direction': 'direcao_vento',
-             'DewPoint(°C)': 'ponto_orvalho',
-             'WindChill(°C)': 'sensacao_termica',
-             'Hour Rainfall(mm)': 'chuva_hora',
-             '24 Hour Rainfall(mm)': 'chuva_24h',
-             'Week Rainfall(mm)': 'chuva_semana',
-             'Month Rainfall(mm)': 'chuva_mes',
-             'Total Rainfall(mm)': 'chuva_total'}
+             'Indoor Temperature(°C)': 'internal_temp',
+             'Indoor Humidity(%)': 'internal_humidity',
+             'Outdoor Temperature(°C)': 'external_temp',
+             'Outdoor Humidity(%)': 'external_humidity',
+             'Relative Pressure(mmHg)': 'relative_pressure',
+             'Absolute Pressure(mmHg)': 'absolute_pressure',
+             'Wind Speed(km/h)': 'wind speed',
+             'Gust(km/h)': 'gust_wind',
+             'Wind Direction': 'wind_direction',
+             'DewPoint(°C)': 'dew point',
+             'WindChill(°C)': 'Thermal sensation',
+             'Hour Rainfall(mm)': 'rain_time',
+             '24 Hour Rainfall(mm)': 'rain_24h',
+             'Week Rainfall(mm)': 'rain_week',
+             'Month Rainfall(mm)': 'rain_month',
+             'Total Rainfall(mm)': 'total_rain'}
 df.info()
 
 # renomeando as colunas
@@ -69,7 +69,7 @@ df_clean = df_clean.dropna()
 num_cols = df.select_dtypes(include=['float64', 'int64']).columns
 
 # removendo colunas desnecessárias
-num_cols = num_cols.drop(['id', 'intervalo','chuva_hora','chuva_semana','chuva_mes','chuva_24h'])
+num_cols = num_cols.drop(['id', 'intervalo','rain_time','rain_week','rain_month','rain_24h'])
 
 st.title("Estação Meteorológica IFPR-Campus Capanema")
 
@@ -92,13 +92,12 @@ st.write(f"<p style='font-size: 25px'>{'Aqui são apresentados os dados em tabel
 st.write(df_clean.head())
 
 # Definindo as variáveis explicativas e a variável alvo
-explanatory_variables = ['pressao_absoluta']
-target_variable = ['temp_externa']
+explanatory_variables = ['absolute_pressure']
+target_variable = ['external_temp']
 # Treinando o modelo Regressão Linear
 reg = LinearRegression()
 reg.fit(df_clean[explanatory_variables], df_clean[target_variable])
 st.write(f"<p style='font-size: 25px'>{'Gráfico com a regressão linear 1'}</p>", unsafe_allow_html=True)
-
 # Exibindo o coeficiente e o intercepto
 st.write(f'Coeficiente: {reg.coef_[0]:}')
 st.write(f'Intercepto: {reg.intercept_:}')
@@ -106,17 +105,16 @@ st.write(f'Intercepto: {reg.intercept_:}')
 fig, ax = plt.subplots()
 ax.scatter(df_clean[explanatory_variables], df_clean[target_variable])
 ax.plot(df_clean[explanatory_variables], reg.predict(df_clean[explanatory_variables]), color='red')
-ax.set_xlabel('Pressao Absoluta')
-ax.set_ylabel('Temperatura Externa')
+ax.set_xlabel('Absolute Pressure')
+ax.set_ylabel('External Temperature')
 st.pyplot(fig)
-
 # Definindo as variáveis explicativas e a variável alvo
-explanatory_variables = ['pressao_relativa']
-target_variable = ['temp_externa']
+explanatory_variables = ['relative_pressure']
+target_variable = ['external_temp']
 # Treinando o modelo Regressão Linear
 reg = LinearRegression()
 reg.fit(df_clean[explanatory_variables], df_clean[target_variable])
-st.write(f"<p style='font-size: 25px'>{'Gráfico com a regressão linear 2'}</p>", 
+st.write(f"<p style='font-size: 25px'>{'Graph with linear regression 2'}</p>",
          unsafe_allow_html=True)
 # Exibindo o coeficiente e o intercepto
 st.write(f'Coeficiente: {reg.coef_[0]:}')
@@ -126,8 +124,8 @@ fig, ax = plt.subplots()
 ax.scatter(df_clean[explanatory_variables], df_clean[target_variable])
 ax.plot(df_clean[explanatory_variables], reg.predict(df_clean[explanatory_variables]), 
         color='red')
-ax.set_xlabel('Pressao Relativa')
-ax.set_ylabel('Temperatura Externa')
+ax.set_xlabel('Relative Pressure')
+ax.set_ylabel('External Temperature')
 st.pyplot(fig)
 
 
