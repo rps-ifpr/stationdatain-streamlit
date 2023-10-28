@@ -1,6 +1,9 @@
 import pandas as pd
 import seaborn as sns
+
 from sklearn.linear_model import LinearRegression
+from sklearn.tree import DecisionTreeRegressor
+
 import matplotlib.pyplot as plt
 import streamlit as st
 
@@ -127,6 +130,30 @@ ax.plot(df_clean[explanatory_variables], reg.predict(df_clean[explanatory_variab
 ax.set_xlabel('Relative Pressure')
 ax.set_ylabel('External Temperature')
 st.pyplot(fig)
+
+###################################################
+
+# Definindo as variáveis explicativas e a variável alvo para a Árvore de Decisão
+explanatory_variable = ['absolute_pressure']
+target_variable = ['external_temp']
+
+# Instanciando e treinando o modelo de Árvore de Decisão
+model = DecisionTreeRegressor()
+model.fit(df_clean[explanatory_variable], df_clean[target_variable])
+
+# Exibindo as previsões do modelo (neste caso, para plotar um gráfico)
+predictions = model.predict(df_clean[explanatory_variable])
+
+# Exibindo o gráfico com a Árvore de Decisão
+fig, ax = plt.subplots()
+ax.scatter(df_clean[explanatory_variable], df_clean[target_variable])
+ax.plot(df_clean[explanatory_variable], predictions, color='red')
+ax.set_xlabel('Absolute Pressure')
+ax.set_ylabel('External Temperature')
+st.pyplot(fig)
+
+
+
 
 
 
