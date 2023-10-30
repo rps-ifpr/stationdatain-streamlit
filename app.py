@@ -3,6 +3,12 @@ import seaborn as sns
 
 from sklearn.linear_model import LinearRegression
 from sklearn.tree import DecisionTreeRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+from sklearn.tree import plot_tree
+from keras.models import Sequential
+from keras.layers import Dense
+from sklearn.preprocessing import MinMaxScaler
 
 import matplotlib.pyplot as plt
 import streamlit as st
@@ -133,27 +139,63 @@ st.pyplot(fig)
 
 ###################################################
 
-# Definindo as variáveis explicativas e a variável alvo para a Árvore de Decisão
-explanatory_variable = ['absolute_pressure']
-target_variable = ['external_temp']
+# Seleção de variáveis para a Árvore de Decisão
+features_tree = [
+    'external_humidity',
+    'relative_pressure',
+    'wind speed',
+    'Thermal sensation'
+]
 
-# Instanciando e treinando o modelo de Árvore de Decisão
-model = DecisionTreeRegressor()
-model.fit(df_clean[explanatory_variable], df_clean[target_variable])
+# Divisão dos dados em treino e teste
+X_tree = df_clean[features_tree]
+y_tree = df_clean['external_temp']
+X_train_tree, X_test_tree, y_train_tree, y_test_tree = train_test_split(X_tree, y_tree, test_size=0.2, random_state=42)
 
-# Exibindo as previsões do modelo (neste caso, para plotar um gráfico)
-predictions = model.predict(df_clean[explanatory_variable])
+# Criando e treinando o modelo de Árvore de Decisão
+tree_model = DecisionTreeRegressor()
+tree_model.fit(X_train_tree, y_train_tree)
 
-# Exibindo o gráfico com a Árvore de Decisão
-fig, ax = plt.subplots()
-ax.scatter(df_clean[explanatory_variable], df_clean[target_variable])
-ax.plot(df_clean[explanatory_variable], predictions, color='red')
-ax.set_xlabel('Absolute Pressure')
-ax.set_ylabel('External Temperature')
+# Visualização da Árvore de Decisão dentro do Streamlit
+st.write("<p style='font-size: 25px'>{'Árvore de Decisão'}</p>", unsafe_allow_html=True)
+fig, ax = plt.subplots(figsize=(15, 8))
+plot_tree(tree_model, feature_names=features_tree, filled=True, ax=ax)
 st.pyplot(fig)
 
+######################################################3
 
+# Seleção de variáveis para a Rede Neural
+features_nn = [
+    'external_humidity',
+    'external_temp',
+    'wind speed',
+    'Thermal sensation'
+]
 
+# Divisão dos dados em treino e teste
+X_nn = df_clean[features_nn]
+y_nn = df_clean['external_temp']
+X_train_nn, X_test_nn, y_train_nn, y_test_nn = train_test_split(X_nn, y_nn, test_size=0.2, random_state=42)
+
+# Normalização dos dados para a Rede Neural
+scaler_nn = MinMaxScaler()
+X_train_nn_scaled = scaler_nn.fit_transform(X_train_nn)
+X_test_nn_scaled = scaler_nn.transform(X_test_nn)
+
+# Criação e treinamento do modelo de Rede Neural
+model_nn = Sequential()
+model_nn.add(Dense(10, input_dim=len(features_nn), activation='relu'))
+model_nn.add(Dense(1, activation='linear'))
+model_nn.compile(loss='mean_squared_error', optimizer='adam')
+history_nn = model_nn.fit(X_train_nn_scaled, y_train_nn, epochs=50, batch_size=32, validation_data=(X_test_nn_scaled, y_test_nn))
+
+# Exibição do gráfico do treinamento da Rede Neural no Streamlit
+st.write("<p style='font-size: 25px'>{'Treinamento da Rede Neural'}</p>", unsafe_allow_html=True)
+plt.figure(figsize=(8, 6))
+plt.plot(history_nn.history['loss'], label='train')
+plt.plot(history_nn.history['val_loss'], label='test')
+plt.legend()
+st.pyplot(plt)
 
 
 
