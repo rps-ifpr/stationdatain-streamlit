@@ -8,6 +8,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.tree import plot_tree
 from keras.models import Sequential
 from keras.layers import Dense
+from sklearn.svm import SVR
 from sklearn.preprocessing import MinMaxScaler
 
 import matplotlib.pyplot as plt
@@ -191,12 +192,77 @@ history_nn = model_nn.fit(X_train_nn_scaled, y_train_nn, epochs=50, batch_size=3
 
 # Exibição do gráfico do treinamento da Rede Neural no Streamlit
 st.write("<p style='font-size: 25px'>{'Treinamento da Rede Neural'}</p>", unsafe_allow_html=True)
-plt.figure(figsize=(8, 6))
-plt.plot(history_nn.history['loss'], label='train')
-plt.plot(history_nn.history['val_loss'], label='test')
-plt.legend()
-st.pyplot(plt)
 
+# Gráfico de Treinamento vs Teste
+fig, ax = plt.subplots(figsize=(8, 6))
+ax.plot(history_nn.history['loss'], label='Treino')
+ax.plot(history_nn.history['val_loss'], label='Teste')
+ax.set_xlabel('Épocas')
+ax.set_ylabel('Erro Quadrático Médio')
+ax.set_title('Treinamento da Rede Neural')
+ax.legend()
+st.pyplot(fig)
 
+# Predição usando o modelo treinado
+st.write("<p style='font-size: 25px'>{'Predição usando o modelo treinado'}</p>", unsafe_allow_html=True)
+
+# Normalização dos dados de entrada
+X_new_scaled = scaler_nn.transform(X_nn)
+
+# Predição usando o modelo treinado
+predictions = model_nn.predict(X_new_scaled)
+
+# Criando um DataFrame com as previsões
+predictions_df = pd.DataFrame({'Observado': y_nn, 'Previsto': predictions.flatten()})
+
+# Gráfico de comparação entre observado e previsto
+fig, ax = plt.subplots(figsize=(10, 6))
+ax.plot(predictions_df.index, predictions_df['Observado'], label='Observado')
+ax.plot(predictions_df.index, predictions_df['Previsto'], label='Previsto', linestyle='--')
+ax.set_xlabel('Amostras')
+ax.set_ylabel('Temperatura Externa')
+ax.set_title('Comparação entre Observado e Previsto')
+ax.legend()
+st.pyplot(fig)
+
+# Seleção de variáveis para o SVM
+features_svm = [
+    'external_humidity',
+    'relative_pressure',
+    'wind speed',
+    'Thermal sensation'
+]
+
+# Divisão dos dados em treino e teste
+X_svm = df_clean[features_svm]
+y_svm = df_clean['external_temp']
+X_train_svm, X_test_svm, y_train_svm, y_test_svm = train_test_split(X_svm, y_svm, test_size=0.2, random_state=42)
+
+# Normalização dos dados para o SVM
+scaler_svm = MinMaxScaler()
+X_train_svm_scaled = scaler_svm.fit_transform(X_train_svm)
+X_test_svm_scaled = scaler_svm.transform(X_test_svm)
+
+# Criação e treinamento do modelo SVM
+svm_model = SVR()
+svm_model.fit(X_train_svm_scaled, y_train_svm)
+
+# Predição usando o modelo treinado
+predictions_svm = svm_model.predict(X_test_svm_scaled)
+
+# Avaliação do modelo SVM
+mse_svm = mean_squared_error(y_test_svm, predictions_svm)
+st.write(f"<p style='font-size: 25px'>{'Avaliação do modelo SVM'}</p>", unsafe_allow_html=True)
+st.write(f'Mean Squared Error (SVM): {mse_svm:.2f}')
+
+# Gráfico de comparação entre observado e previsto para o SVM
+fig, ax = plt.subplots(figsize=(10, 6))
+ax.scatter(range(len(y_test_svm)), y_test_svm, label='Observado')
+ax.scatter(range(len(predictions_svm)), predictions_svm, label='Previsto', marker='o', linestyle='--', color='red')
+ax.set_xlabel('Amostras')
+ax.set_ylabel('Temperatura Externa')
+ax.set_title('Comparação entre Observado e Previsto (SVM)')
+ax.legend()
+st.pyplot(fig)
 
 
