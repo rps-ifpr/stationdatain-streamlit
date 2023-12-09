@@ -104,6 +104,7 @@ st.write(df_clean.head())
 # Definindo as variáveis explicativas e a variável alvo
 explanatory_variables = ['absolute_pressure']
 target_variable = ['external_temp']
+
 # Treinando o modelo Regressão Linear
 reg = LinearRegression()
 reg.fit(df_clean[explanatory_variables], df_clean[target_variable])
