@@ -1,0 +1,3 @@
+Autentique-se com a API do Google Earth Engine executando o seguinte comando:
+earthengine authenticate
+
