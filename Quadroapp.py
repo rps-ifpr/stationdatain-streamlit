@@ -1,24 +1,69 @@
 import pandas as pd
 import seaborn as sns
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import r2_score
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import streamlit as st
 import numpy as np
+import statsmodels.api as sm
 
+# Função para carregar dados
+def load_data(file_path, delimiter=';'):
+    return pd.read_csv(file_path, delimiter=delimiter)
 
-# Importando os dados
-df = pd.read_csv('dados.csv', delimiter=';')
+# Função para converter variáveis para numéricas
+def convert_to_numeric(df, columns):
+    for coluna in columns:
+        df[coluna] = pd.to_numeric(df[coluna], errors='coerce')
+
+# Função para renomear colunas
+def rename_columns(df, column_mapping):
+    df.rename(columns=column_mapping, inplace=True)
+
+# Função para remover outliers usando IQR
+def remove_outliers_iqr(df, columns, multiplier=1.5):
+    for coluna in columns:
+        Q1 = df[coluna].quantile(0.25)
+        Q3 = df[coluna].quantile(0.75)
+        IQR = Q3 - Q1
+        filtro = (df[coluna] >= Q1 - multiplier * IQR) & (df[coluna] <= Q3 + multiplier * IQR)
+        df = df.loc[filtro]
+    return df
+
+# Função para normalizar variáveis
+def normalize_variables(df, columns, scaler):
+    df_normalized = df.copy()
+    df_normalized[columns] = scaler.fit_transform(df_normalized[columns])
+    return df_normalized
+
+# Função para aplicar transformação logarítmica
+def apply_log_transform(df, column):
+    df[column] = np.log1p(df[column])
+    return df
+
+# Função para treinar modelo de regressão linear
+def train_linear_regression_model(X, y):
+    reg = LinearRegression()
+    reg.fit(X, y)
+    return reg
+
+# Função para calcular o VIF
+def calculate_vif(X):
+    vif_data = pd.DataFrame()
+    vif_data["Variable"] = X.columns
+    vif_data["VIF"] = [sm.OLS(X[col].values, sm.add_constant(X.drop(col, axis=1))).fit().rsquared for col in X.columns]
+    return vif_data
+
+# Carregando os dados
+df = load_data('dados.csv')
 
 # Convertendo variáveis numéricas que estão como objetos
 colunas_para_converter = ['Outdoor Temperature(°C)', 'Outdoor Humidity(%)', 'Wind Speed(km/h)',
                           'Gust(km/h)', 'DewPoint(°C)', 'WindChill(°C)']
-for coluna in colunas_para_converter:
-    df[coluna] = pd.to_numeric(df[coluna], errors='coerce')
+convert_to_numeric(df, colunas_para_converter)
 
 # Renomeando as colunas
-df.rename(columns={
+rename_columns(df, {
     'n': 'id',
     'Time': 'date',
     'Interval': 'intervalo',
@@ -38,18 +83,9 @@ df.rename(columns={
     'Week Rainfall(mm)': 'rain_week',
     'Month Rainfall(mm)': 'rain_month',
     'Total Rainfall(mm)': 'total_rain'
-}, inplace=True)
+})
 
 # Removendo outliers
-def remove_outliers_iqr(df, colunas, multiplier=1.5):
-    for coluna in colunas:
-        Q1 = df[coluna].quantile(0.25)
-        Q3 = df[coluna].quantile(0.75)
-        IQR = Q3 - Q1
-        filtro = (df[coluna] >= Q1 - multiplier * IQR) & (df[coluna] <= Q3 + multiplier * IQR)
-        df = df.loc[filtro]
-    return df
-
 colunas_numericas = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
 df_clean = remove_outliers_iqr(df, colunas_numericas)
 
@@ -71,13 +107,21 @@ fig, ax = plt.subplots(figsize=(10, 10))
 sns.heatmap(corr, annot=True, cmap="coolwarm", ax=ax)
 st.pyplot(fig)
 
-# Definindo as variáveis explicativas e a variável alvo
-explanatory_variables = ['absolute_pressure']
-target_variable = 'external_temp'
+# Verificando a multicolinearidade usando o VIF
+X = df_clean[colunas_analise]
+vif_data = calculate_vif(X)
+st.write("VIF para cada variável:")
+st.write(vif_data)
 
-# Treinando o modelo de Regressão Linear
-reg = LinearRegression()
-reg.fit(df_clean[explanatory_variables], df_clean[target_variable])
+# Removendo variáveis com alto VIF (por exemplo, VIF > 5)
+high_vif_variables = vif_data[vif_data['VIF'] > 5]['Variable'].tolist()
+df_clean = df_clean.drop(columns=high_vif_variables)
+
+# Selecionando colunas para análise após remover variáveis com alto VIF
+colunas_analise = ['external_temp', 'absolute_pressure']
+
+# Treinando o modelo de Regressão Linear após remover variáveis com alto VIF
+reg = train_linear_regression_model(df_clean[colunas_analise], df_clean['external_temp'])
 
 # Exibindo o coeficiente e o intercepto
 st.write('Coeficiente:', reg.coef_[0])
@@ -87,27 +131,4 @@ st.write('Intercepto:', reg.intercept_)
 st.write("Gráfico com a regressão linear")
 fig, ax = plt.subplots(figsize=(10, 6))
 sns.regplot(x='absolute_pressure', y='external_temp', data=df_clean, ax=ax, line_kws={'color': 'red'})
-st.pyplot(fig)
-# Normalizando as variáveis explicativas
-scaler = StandardScaler()
-df_clean_normalized = df_clean.copy()
-df_clean_normalized[explanatory_variables] = scaler.fit_transform(df_clean_normalized[explanatory_variables])
-
-# Aplicando uma transformação logarítmica na umidade externa
-df_clean_normalized['external_humidity'] = np.log1p(df_clean_normalized['external_humidity'])
-
-# Treinando o modelo de Regressão Linear com as variáveis normalizadas e transformadas
-reg = LinearRegression()
-reg.fit(df_clean_normalized[explanatory_variables], df_clean_normalized[target_variable])
-
-# Exibindo os coeficientes e o intercepto
-st.write('Coeficientes:', reg.coef_)
-st.write('Intercepto:', reg.intercept_)
-
-# Plotando o gráfico com a regressão linear após normalização e transformação
-st.write("Gráfico com a regressão linear após normalização e transformação")
-fig, ax = plt.subplots(figsize=(10, 6))
-sns.regplot(x='absolute_pressure', y='external_temp', data=df_clean_normalized, ax=ax, line_kws={'color': 'red'}, label='Absolute Pressure')
-sns.regplot(x='external_humidity', y='external_temp', data=df_clean_normalized, ax=ax, line_kws={'color': 'blue'}, label='Log(External Humidity)')
-ax.legend()
 st.pyplot(fig)
