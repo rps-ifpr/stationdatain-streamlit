@@ -122,7 +122,7 @@ st.pyplot(fig)
 # Definindo as variáveis explicativas e a variável alvo
 explanatory_variables = ['relative_pressure']
 target_variable = ['external_temp']
-# Treinando o modelo Regressão Linear
+# Treinando o modelo Regressão Linearover
 reg = LinearRegression()
 reg.fit(df_clean[explanatory_variables], df_clean[target_variable])
 st.write(f"<p style='font-size: 25px'>{'Graph with linear regression 2'}</p>",
