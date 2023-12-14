@@ -3,12 +3,15 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVR
+from sklearn.neural_network import MLPRegressor
 import matplotlib.pyplot as plt
 import streamlit as st
 import numpy as np
 import statsmodels.api as sm
 import joblib  # Certifique-se de instalar a biblioteca: pip install joblib
 import plotly.express as px
+
 
 # Função para carregar dados
 def load_data(file_path, delimiter=';'):
@@ -177,6 +180,17 @@ joblib.dump(reg_multipla, 'modelo_regressao_linear_multipla.joblib')
 # Carregando o modelo treinado de regressão linear múltipla
 loaded_model_multipla = joblib.load('modelo_regressao_linear_multipla.joblib')
 
+# Implementando validação cruzada
+from sklearn.model_selection import cross_val_score
+
+cv_scores_multipla = cross_val_score(loaded_model_multipla, X_multipla_train_normalized, y_multipla_train, cv=5)  # 5 é o número de folds
+average_cv_score_multipla = np.mean(cv_scores_multipla)
+std_cv_score_multipla = np.std(cv_scores_multipla)
+
+# Exibindo os resultados da validação cruzada
+st.write(f'Acurácia média da validação cruzada: {average_cv_score_multipla}')
+st.write(f'Desvio padrão das pontuações: {std_cv_score_multipla}')
+
 # Plotando o gráfico com a regressão linear múltipla usando o modelo carregado
 st.write("Gráfico com a regressão linear múltipla usando o modelo RL-multipla")
 
@@ -251,12 +265,10 @@ X_multipla_train, X_multipla_test, y_multipla_train, y_multipla_test = train_tes
     df_clean[colunas_analise_multipla], df_clean['external_temp'], test_size=0.2, random_state=42
 )
 
-
 # Plotando o gráfico com a regressão linear múltipla usando o modelo carregado
 st.write("Gráfico com a regressão linear múltipla usando o modelo carregado")
 fig_multipla = px.scatter(df_resultados_multipla, x='Valores Previstos', y='Valores Reais', template="plotly",
                           title="Regressão Linear Múltipla - Valores Reais vs. Previstos", color_discrete_sequence=['blue'])
-
 # Linha de tendência
 fig_multipla.add_trace(px.line(x=df_resultados_multipla['Valores Previstos'],
                                y=loaded_model_multipla.predict(X_multipla_test_normalized),
@@ -268,8 +280,31 @@ fig_multipla.add_shape(type='line', x0=df_resultados_multipla['Valores Previstos
                        y0=df_resultados_multipla['Valores Previstos'].min(),
                        y1=df_resultados_multipla['Valores Previstos'].max(),
                        line=dict(color='red', dash='dash'))
-
 st.plotly_chart(fig_multipla)
 
+######################3
+# Dividindo os dados para treino e teste para modelos avançados
+X_train_advanced, X_test_advanced, y_train_advanced, y_test_advanced = train_test_split(
+    df_clean[colunas_analise], df_clean['external_temp'], test_size=0.2, random_state=42
+)
 
+# Treinando o modelo SVM nos dados de treino
+svm_model = SVR()
+svm_model.fit(X_train_advanced, y_train_advanced)
+
+# Avaliando o modelo SVM nos dados de teste
+svm_score = svm_model.score(X_test_advanced, y_test_advanced)
+st.write(f'Acurácia do modelo SVM nos dados de teste: {svm_score}')
+
+# Treinando o modelo de Redes Neurais nos dados de treino
+nn_model = MLPRegressor(random_state=42)
+nn_model.fit(X_train_advanced, y_train_advanced)
+
+# Avaliando o modelo de Redes Neurais nos dados de teste
+nn_score = nn_model.score(X_test_advanced, y_test_advanced)
+st.write(f'Acurácia do modelo de Redes Neurais nos dados de teste: {nn_score}')
+
+# Persistindo os modelos treinados
+joblib.dump(svm_model, 'modelo_svm.joblib')
+joblib.dump(nn_model, 'modelo_redes_neurais.joblib')
 
