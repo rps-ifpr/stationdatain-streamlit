@@ -282,29 +282,76 @@ fig_multipla.add_shape(type='line', x0=df_resultados_multipla['Valores Previstos
                        line=dict(color='red', dash='dash'))
 st.plotly_chart(fig_multipla)
 
-######################3
-# Dividindo os dados para treino e teste para modelos avançados
-X_train_advanced, X_test_advanced, y_train_advanced, y_test_advanced = train_test_split(
+############
+# Dividindo os dados para treino e teste para a rede neural
+X_train_nn, X_test_nn, y_train_nn, y_test_nn = train_test_split(
     df_clean[colunas_analise], df_clean['external_temp'], test_size=0.2, random_state=42
 )
 
-# Treinando o modelo SVM nos dados de treino
-svm_model = SVR()
-svm_model.fit(X_train_advanced, y_train_advanced)
+# Normalizando as variáveis para a rede neural
+scaler_nn = StandardScaler()
+X_train_nn_normalized = normalize_variables(X_train_nn, colunas_analise, scaler_nn)
+X_test_nn_normalized = normalize_variables(X_test_nn, colunas_analise, scaler_nn)
 
-# Avaliando o modelo SVM nos dados de teste
-svm_score = svm_model.score(X_test_advanced, y_test_advanced)
-st.write(f'Acurácia do modelo SVM nos dados de teste: {svm_score}')
+# Treinando o modelo de Rede Neural
+reg_nn = MLPRegressor(hidden_layer_sizes=(100,), max_iter=1000, random_state=42)
+reg_nn.fit(X_train_nn_normalized, y_train_nn)
 
-# Treinando o modelo de Redes Neurais nos dados de treino
-nn_model = MLPRegressor(random_state=42)
-nn_model.fit(X_train_advanced, y_train_advanced)
+# Persistindo o modelo treinado da Rede Neural
+joblib.dump(reg_nn, 'modelo_rede_neural.joblib')
 
-# Avaliando o modelo de Redes Neurais nos dados de teste
-nn_score = nn_model.score(X_test_advanced, y_test_advanced)
-st.write(f'Acurácia do modelo de Redes Neurais nos dados de teste: {nn_score}')
+# Carregando o modelo treinado da Rede Neural
+loaded_model_nn = joblib.load('modelo_rede_neural.joblib')
 
-# Persistindo os modelos treinados
-joblib.dump(svm_model, 'modelo_svm.joblib')
-joblib.dump(nn_model, 'modelo_redes_neurais.joblib')
+# Avaliando o modelo nos dados de teste
+score_nn = loaded_model_nn.score(X_test_nn_normalized, y_test_nn)
+st.write(f'Acurácia do modelo de Rede Neural nos dados de teste: {score_nn}')
 
+# Calculando os resíduos
+residuals = y_test_nn - loaded_model_nn.predict(X_test_nn_normalized)
+
+# Criando o gráfico de resíduos
+fig_residuos, ax_residuos = plt.subplots(figsize=(10, 6))
+sns.residplot(x=loaded_model_nn.predict(X_test_nn_normalized), y=residuals, scatter_kws={'alpha': 0.5})
+plt.axhline(y=0, color='red', linestyle='--', linewidth=2)
+plt.xlabel('Valores Previstos')
+plt.ylabel('Resíduos')
+plt.title('Gráfico de Resíduos da Rede Neural')
+st.pyplot(fig_residuos)
+
+######################
+# Dividindo os dados para treino e teste para a rede neural profunda
+X_train_dnn, X_test_dnn, y_train_dnn, y_test_dnn = train_test_split(
+    df_clean[colunas_analise], df_clean['external_temp'], test_size=0.2, random_state=42
+)
+
+# Normalizando as variáveis para a rede neural profunda
+scaler_dnn = StandardScaler()
+X_train_dnn_normalized = normalize_variables(X_train_dnn, colunas_analise, scaler_dnn)
+X_test_dnn_normalized = normalize_variables(X_test_dnn, colunas_analise, scaler_dnn)
+
+# Criando e treinando a Rede Neural Profunda
+dnn = MLPRegressor(hidden_layer_sizes=(100, 50), max_iter=1000, random_state=42)
+dnn.fit(X_train_dnn_normalized, y_train_dnn)
+
+# Persistindo o modelo treinado da Rede Neural Profunda
+joblib.dump(dnn, 'modelo_rede_neural_profunda.joblib')
+
+# Carregando o modelo treinado da Rede Neural Profunda
+loaded_model_dnn = joblib.load('modelo_rede_neural_profunda.joblib')
+
+# Avaliando o modelo nos dados de teste
+score_dnn = loaded_model_dnn.score(X_test_dnn_normalized, y_test_dnn)
+st.write(f'Acurácia do modelo de Rede Neural Profunda nos dados de teste: {score_dnn}')
+
+# Calculando os resíduos para a Rede Neural Profunda
+residuals_dnn = y_test_dnn - loaded_model_dnn.predict(X_test_dnn_normalized)
+
+# Criando o gráfico de resíduos para a Rede Neural Profunda
+fig_residuos_dnn, ax_residuos_dnn = plt.subplots(figsize=(10, 6))
+plt.scatter(loaded_model_dnn.predict(X_test_dnn_normalized), residuals_dnn, alpha=0.5)
+plt.axhline(y=0, color='red', linestyle='--', linewidth=2)
+plt.xlabel('Valores Previstos')
+plt.ylabel('Resíduos')
+plt.title('Gráfico de Resíduos da Rede Neural Profunda')
+st.pyplot(fig_residuos_dnn)
