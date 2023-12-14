@@ -1,11 +1,13 @@
 import pandas as pd
 import seaborn as sns
+from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import streamlit as st
 import numpy as np
 import statsmodels.api as sm
+import joblib  # Certifique-se de instalar a biblioteca: pip install joblib
 
 # Função para carregar dados
 def load_data(file_path, delimiter=';'):
@@ -110,25 +112,44 @@ st.pyplot(fig)
 # Verificando a multicolinearidade usando o VIF
 X = df_clean[colunas_analise]
 vif_data = calculate_vif(X)
-st.write("VIF para cada variável:")
-st.write(vif_data)
 
 # Removendo variáveis com alto VIF (por exemplo, VIF > 5)
 high_vif_variables = vif_data[vif_data['VIF'] > 5]['Variable'].tolist()
 df_clean = df_clean.drop(columns=high_vif_variables)
 
+# Plotando o gráfico de barras para o VIF
+st.write("Gráfico de VIF para cada variável:")
+fig, ax = plt.subplots(figsize=(10, 6))
+sns.barplot(x='Variable', y='VIF', data=vif_data, palette="viridis")
+plt.xticks(rotation=45, ha="right")
+plt.tight_layout()
+st.pyplot(fig)
+
 # Selecionando colunas para análise após remover variáveis com alto VIF
 colunas_analise = ['external_temp', 'absolute_pressure']
 
-# Treinando o modelo de Regressão Linear após remover variáveis com alto VIF
-reg = train_linear_regression_model(df_clean[colunas_analise], df_clean['external_temp'])
+# Dividindo os dados para treino e teste
+X_train, X_test, y_train, y_test = train_test_split(df_clean[colunas_analise], df_clean['external_temp'], test_size=0.2, random_state=42)
 
-# Exibindo o coeficiente e o intercepto
-st.write('Coeficiente:', reg.coef_[0])
-st.write('Intercepto:', reg.intercept_)
+# Treinando o modelo de Regressão Linear nos dados de treino
+reg = train_linear_regression_model(X_train, y_train)
 
-# Plotando o gráfico com a regressão linear
-st.write("Gráfico com a regressão linear")
+# Persistindo o modelo treinado
+joblib.dump(reg, 'modelo_regressao_linear.joblib')
+
+# Carregando o modelo treinado
+loaded_model = joblib.load('modelo_regressao_linear.joblib')
+
+# Avaliando o modelo nos dados de teste
+score = loaded_model.score(X_test, y_test)
+st.write(f'Acurácia do modelo nos dados de teste: {score}')
+
+# Exibindo o coeficiente e o intercepto do modelo carregado
+st.write('Coeficiente do modelo carregado:', loaded_model.coef_[0])
+st.write('Intercepto do modelo carregado:', loaded_model.intercept_)
+
+# Plotando o gráfico com a regressão linear usando o modelo carregado
+st.write("Gráfico com a regressão linear usando o modelo carregado")
 fig, ax = plt.subplots(figsize=(10, 6))
 sns.regplot(x='absolute_pressure', y='external_temp', data=df_clean, ax=ax, line_kws={'color': 'red'})
 st.pyplot(fig)
