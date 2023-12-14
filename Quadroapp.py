@@ -149,13 +149,13 @@ st.write(f'Acurácia do modelo nos dados de teste: {score}')
 st.write('Coeficiente do modelo carregado:', loaded_model.coef_[0])
 st.write('Intercepto do modelo carregado:', loaded_model.intercept_)
 
-# Plotando o gráfico com a regressão linear usando o modelo carregado
+# Plotando o gráfico com a regressão linear usando o modelo RL-simples
 st.write("Gráfico com a regressão linear usando o modelo carregado")
 fig, ax = plt.subplots(figsize=(10, 6))
 sns.regplot(x='absolute_pressure', y='external_temp', data=df_clean, ax=ax, line_kws={'color': 'red'})
 st.pyplot(fig)
 
-######## REGRESSÃO LINEAR MULTIPLAS
+######## REGRESSÃO LINEAR MÚLTIPLA ########
 
 # Selecionando colunas para análise de regressão linear múltipla
 colunas_analise_multipla = ['external_humidity', 'wind_speed', 'gust_wind', 'dew_point', 'thermal_sensation', 'absolute_pressure']
@@ -177,17 +177,99 @@ joblib.dump(reg_multipla, 'modelo_regressao_linear_multipla.joblib')
 # Carregando o modelo treinado de regressão linear múltipla
 loaded_model_multipla = joblib.load('modelo_regressao_linear_multipla.joblib')
 
-# Avaliando o modelo nos dados de teste para regressão linear múltipla
-score_multipla = loaded_model_multipla.score(X_multipla_test_normalized, y_multipla_test)
-st.write(f'Acurácia do modelo de regressão linear múltipla nos dados de teste: {score_multipla}')
+# Plotando o gráfico com a regressão linear múltipla usando o modelo carregado
+st.write("Gráfico com a regressão linear múltipla usando o modelo RL-multipla")
 
-# Exibindo os coeficientes e o intercepto do modelo carregado de regressão linear múltipla
-st.write('Coeficientes do modelo de regressão linear múltipla carregado:', loaded_model_multipla.coef_)
-st.write('Intercepto do modelo de regressão linear múltipla carregado:', loaded_model_multipla.intercept_)
+# Criando DataFrame para comparar valores reais e previstos
+df_resultados_multipla = pd.DataFrame({
+    'Valores Reais': y_multipla_test,
+    'Valores Previstos': loaded_model_multipla.predict(X_multipla_test_normalized)
+})
+
+# Gráfico de dispersão
+fig_multipla = px.scatter(df_resultados_multipla, x='Valores Previstos', y='Valores Reais', template="plotly",
+                          title="Regressão Linear Múltipla - Valores Reais vs. Previstos", color_discrete_sequence=['blue'])
+
+# Linha de tendência
+fig_multipla.add_trace(px.line(x=df_resultados_multipla['Valores Previstos'],
+                               y=loaded_model_multipla.predict(X_multipla_test_normalized),
+                               line_shape='linear').data[0])
+
+# Adicionando identidade (linha 45 graus) para referência
+fig_multipla.add_shape(type='line', x0=df_resultados_multipla['Valores Previstos'].min(),
+                       x1=df_resultados_multipla['Valores Previstos'].max(),
+                       y0=df_resultados_multipla['Valores Previstos'].min(),
+                       y1=df_resultados_multipla['Valores Previstos'].max(),
+                       line=dict(color='red', dash='dash'))
+
+st.plotly_chart(fig_multipla)
+
+######################################Variavel de maior correlação
+
+# Calcular a matriz de correlação
+correlation_matrix_multipla = df_clean[colunas_analise_multipla + ['external_temp']].corr()
+
+# Selecionar variáveis independentes com correlação significativa
+correlation_threshold_multipla = 0.5  # Ajuste conforme necessário
+significant_features_multipla = correlation_matrix_multipla[abs(correlation_matrix_multipla['external_temp']) > correlation_threshold_multipla].index
+
+# Usar apenas variáveis independentes com correlação significativa
+colunas_analise_multipla = significant_features_multipla[:-1]  # Excluindo a variável dependente 'external_temp'
+
+# Dividindo os dados para treino e teste para regressão linear múltipla
+X_multipla_train, X_multipla_test, y_multipla_train, y_multipla_test = train_test_split(
+    df_clean[colunas_analise_multipla], df_clean['external_temp'], test_size=0.2, random_state=42
+)
+
+# Normalizando as variáveis para a regressão linear múltipla
+scaler_multipla = StandardScaler()
+X_multipla_train_normalized = normalize_variables(X_multipla_train, colunas_analise_multipla, scaler_multipla)
+X_multipla_test_normalized = normalize_variables(X_multipla_test, colunas_analise_multipla, scaler_multipla)
+
+# Treinando o modelo de Regressão Linear Múltipla nos dados de treino
+reg_multipla = train_linear_regression_model(X_multipla_train_normalized, y_multipla_train)
+
+# Persistindo o modelo treinado de regressão linear múltipla
+joblib.dump(reg_multipla, 'modelo_regressao_linear_multipla2.joblib')
+
+# Carregando o modelo treinado de regressão linear múltipla
+loaded_model_multipla = joblib.load('modelo_regressao_linear_multipla2.joblib')
+
+# Selecionar variáveis independentes com correlação significativa
+correlation_threshold_multipla = 0.5  # Ajuste conforme necessário
+significant_features_multipla = correlation_matrix_multipla[abs(correlation_matrix_multipla['external_temp']) > correlation_threshold_multipla].index
+
+# Usar apenas variáveis independentes com correlação significativa
+colunas_analise_multipla = significant_features_multipla[:-1]  # Excluindo a variável dependente 'external_temp'
+
+# Imprimir as variáveis usadas
+st.write("Variáveis independentes usadas na regressão linear múltipla:")
+st.write(colunas_analise_multipla)
+
+# Dividindo os dados para treino e teste para regressão linear múltipla
+X_multipla_train, X_multipla_test, y_multipla_train, y_multipla_test = train_test_split(
+    df_clean[colunas_analise_multipla], df_clean['external_temp'], test_size=0.2, random_state=42
+)
+
 
 # Plotando o gráfico com a regressão linear múltipla usando o modelo carregado
 st.write("Gráfico com a regressão linear múltipla usando o modelo carregado")
-fig_multipla, ax_multipla = plt.subplots(figsize=(10, 6))
-sns.regplot(x=loaded_model_multipla.predict(X_multipla_test_normalized), y=y_multipla_test, ax=ax_multipla, line_kws={'color': 'red'})
-st.pyplot(fig_multipla)
+fig_multipla = px.scatter(df_resultados_multipla, x='Valores Previstos', y='Valores Reais', template="plotly",
+                          title="Regressão Linear Múltipla - Valores Reais vs. Previstos", color_discrete_sequence=['blue'])
+
+# Linha de tendência
+fig_multipla.add_trace(px.line(x=df_resultados_multipla['Valores Previstos'],
+                               y=loaded_model_multipla.predict(X_multipla_test_normalized),
+                               line_shape='linear').data[0])
+
+# Adicionando identidade (linha 45 graus) para referência
+fig_multipla.add_shape(type='line', x0=df_resultados_multipla['Valores Previstos'].min(),
+                       x1=df_resultados_multipla['Valores Previstos'].max(),
+                       y0=df_resultados_multipla['Valores Previstos'].min(),
+                       y1=df_resultados_multipla['Valores Previstos'].max(),
+                       line=dict(color='red', dash='dash'))
+
+st.plotly_chart(fig_multipla)
+
+
 
