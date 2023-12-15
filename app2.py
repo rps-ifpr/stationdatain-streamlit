@@ -355,3 +355,4 @@ plt.xlabel('Valores Previstos')
 plt.ylabel('Resíduos')
 plt.title('Gráfico de Resíduos da Rede Neural Profunda')
 st.pyplot(fig_residuos_dnn)
+
