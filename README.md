@@ -1,4 +1,4 @@
-# stationdatain-streamlit
+# Stationdatain-streamlit
 # Análise Meteorológica
 
 Este repositório contém um conjunto de scripts em Python para realizar uma análise abrangente dos dados meteorológicos. O código inclui desde o carregamento e pré-processamento dos dados até a implementação de modelos de regressão linear simples, regressão linear múltipla e redes neurais para previsão de temperatura externa.
