@@ -1,71 +1,71 @@
-import streamlit as st
-import numpy as np
-import matplotlib.pyplot as plt
-import rasterio
+import tensorflow as tf
+from tensorflow.keras import layers, models
+def create_cnn(input_shape):
+    model = models.Sequential([
+        layers.Conv2D(32, (3, 3), activation='relu', input_shape=input_shape),
+        layers.MaxPooling2D((2, 2)),
+        layers.Conv2D(64, (3, 3), activation='relu'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Conv2D(64, (3, 3), activation='relu'),
+        layers.Flatten(),
+        layers.Dense(64, activation='relu')
+    ])
+    return model
 
-def load_real_data(filepath):
-    with rasterio.open(filepath) as src:
-        # Lê a imagem. O índice 'read' começa em 1. Aqui, estamos lendo todas as bandas.
-        image = src.read()
-        # Se a sua imagem tiver bandas específicas a serem visualizadas ou precisar de tratamento especial,
-        # você pode ajustar a leitura aqui.
+def create_lstm(input_shape):
+    model = models.Sequential([
+        layers.LSTM(64, return_sequences=True, input_shape=input_shape),
+        layers.LSTM(32),
+        layers.Dense(32, activation='relu')
+    ])
+    return model
 
-        # Transpondo de (bandas, altura, largura) para (altura, largura, bandas) para visualização
-        image = np.transpose(image, (1, 2, 0))
-        # Se sua imagem for monocromática ou precisar de uma combinação específica de bandas,
-        # ajuste a transposição ou manipulação de bandas aqui.
+def create_dnn(input_shape):
+    model = models.Sequential([
+        layers.Dense(64, activation='relu', input_shape=input_shape),
+        layers.Dense(32, activation='relu'),
+        layers.Dense(32, activation='relu')
+    ])
+    return model
 
-    return image
+class AttentionLayer(layers.Layer):
+    def __init__(self, **kwargs):
+        super(AttentionLayer, self).__init__(**kwargs)
 
-# Atualize o caminho para a localização da sua imagem específica, se diferente.
-filepath = "Multi-Input/Sentinel2_Image7.tif"
+    def call(self, inputs):
+        # Supondo que `inputs` seja uma lista de tensores [h_sat, h_temp, h_meteo, h_solo, h_cult]
+        # Concatena as entradas
+        x = tf.concat(inputs, axis=-1)
+        # Aplica atenção
+        attention_scores = tf.nn.softmax(layers.Dense(1)(x), axis=1)
+        weighted_output = x * attention_scores
+        return tf.reduce_sum(weighted_output, axis=1)
+def create_final_model(input_shapes):
+    # Cria as sub-redes
+    cnn_input = layers.Input(shape=input_shapes['satellite'])
+    lstm_input = layers.Input(shape=input_shapes['temporal'])
+    dnn_input = layers.Input(shape=input_shapes['structured'])
 
-# Carregar dados reais
-X_satellite_real = load_real_data(filepath)
+    cnn = create_cnn(input_shapes['satellite'])(cnn_input)
+    lstm = create_lstm(input_shapes['temporal'])(lstm_input)
+    dnn = create_dnn(input_shapes['structured'])(dnn_input)
 
-# Visualizando uma amostra dos Dados de Satélite
-st.write("Visualizando uma imagem de satélite real:")
-fig, ax = plt.subplots()
-# Se sua imagem tiver bandas que não são RGB padrão ou precisar de processamento de cores,
-# ajuste a visualização aqui.
-ax.imshow(X_satellite_real[:, :, :3])  # Isso pressupõe que as primeiras 3 bandas possam ser visualizadas como RGB.
-st.pyplot(fig)
+    # Fusão com atenção
+    fused = AttentionLayer()([cnn, lstm, dnn])
 
-import streamlit as st
-import pandas as pd
+    # Camada de decisão
+    decision_output = layers.Dense(1, activation='sigmoid')(fused)
 
-# Exemplo de dados de localização
-data = {
-    'lat': [37.7749, 34.0522, 40.7128],
-    'lon': [-122.4194, -118.2437, -74.0060],
-    'nome': ['São Francisco', 'Los Angeles', 'Nova York']
-}
-df = pd.DataFrame(data)
+    model = models.Model(inputs=[cnn_input, lstm_input, dnn_input], outputs=decision_output)
 
-# Visualizando os dados no mapa
-st.map(df)
+    return model
 
-import streamlit as st
-import pydeck as pdk
+model = create_final_model({
+    'satellite': (64, 64, 3),  # Exemplo de shape para imagens de satélite
+    'temporal': (120, 10),     # Exemplo de shape para séries temporais (120 timesteps, 10 features)
+    'structured': (10,)        # Exemplo de shape para dados estruturados (10 features)
+})
 
-# Exemplo de visualização de dados no mapa com pydeck
-# Define a camada de dados
-layer = pdk.Layer(
-    'ScatterplotLayer',     # Tipo da camada
-    df,                     # DataFrame com os dados
-    get_position=['lon', 'lat'],  # Colunas do DataFrame que contêm as coordenadas
-    get_color='[200, 30, 0, 160]',  # Cor dos pontos
-    get_radius=10000,          # Tamanho dos pontos
-)
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
-# Define a visualização
-view_state = pdk.ViewState(
-    latitude=37.7749,
-    longitude=-122.4194,
-    zoom=4,
-    pitch=0
-)
-
-# Cria e mostra a visualização
-r = pdk.Deck(layers=[layer], initial_view_state=view_state, map_style='mapbox://styles/mapbox/light-v9')
-st.pydeck_chart(r)
+# model.fit(...) # Adicione aqui o treinamento com seus dado

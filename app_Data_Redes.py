@@ -7,13 +7,16 @@ from sklearn.metrics import roc_curve, auc, confusion_matrix
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Dense, Conv2D, LSTM, Concatenate, Flatten, BatchNormalization, Dropout, MaxPooling2D
 import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+from tensorflow.keras.models import Model
 
 # Configuração do Streamlit
 st.title('Treinamento de Modelo e Visualização de Métricas')
 
 # Definição da função generate_synthetic_data
 def generate_synthetic_data(num_samples=10):
-    num_hours = 30 * 24 * 6  # 4320 pontos de dados para simular entradas a cada hora durante 6 meses
+    num_hours = 30 * 24 * 12  # 4320 pontos de dados para simular entradas a cada hora durante 6 meses
     X_satellite = np.random.rand (num_samples, 128, 128, 3)  # Imagens de satélite
     X_temporal = np.random.rand (num_samples, num_hours, 1)  # Dados de séries temporais ajustados
     X_weather = np.random.rand (num_samples, 10)  # Dados meteorológicos
@@ -24,7 +27,7 @@ def generate_synthetic_data(num_samples=10):
 
 # Botão para gerar e visualizar dados sintéticos
 if st.button ('Gerar e Visualizar Dados Sintéticos'):
-    num_samples = 100  # Define o número de amostras que você quer gerar
+    num_samples = 10000  # Define o número de amostras que você quer gerar
     X_satellite, X_temporal, X_weather, X_soil, X_crop_info, Y = generate_synthetic_data (num_samples)
 
     # Visualizando uma amostra dos Dados de Satélite
@@ -127,6 +130,7 @@ def create_complete_model():
 
     model = Model(inputs=[satellite_input, temporal_input, weather_input, soil_input, crop_info_input], outputs=decision_layer)
     return model
+
 # Função para treinar o modelo e retornar modelo e histórico
 @st.cache_data
 def train_model():
@@ -221,3 +225,44 @@ if st.button ('Visualizar Métricas de Treinamento', key='view_training_metrics'
         st.write ("Por favor, treine o modelo primeiro para visualizar as métricas.")
 
 
+
+# Supondo que X_real e X_simulated sejam seus dados reais e simulados
+# feature_index é o índice da característica que você deseja analisar
+
+def compare_distributions(X_real, X_simulated, feature_index=0):
+    mean_real = np.mean(X_real[:, feature_index])
+    std_real = np.std(X_real[:, feature_index])
+    mean_simulated = np.mean(X_simulated[:, feature_index])
+    std_simulated = np.std(X_simulated[:, feature_index])
+
+    st.write(f"Real Data: Mean = {mean_real}, Std = {std_real}")
+    st.write(f"Simulated Data: Mean = {mean_simulated}, Std = {std_simulated}")
+
+    # Plot
+    fig, ax = plt.subplots()
+    ax.hist(X_real[:, feature_index], alpha=0.5, label='Real')
+    ax.hist(X_simulated[:, feature_index], alpha=0.5, label='Simulated')
+    ax.legend(loc='upper right')
+    ax.set_title("Comparison of Data Distributions")
+    st.pyplot(fig)
+
+# Supondo que create_complete_model() crie seu modelo TensorFlow/Keras
+
+def evaluate_model_performance(X_real, Y_real, X_simulated, Y_simulated, create_complete_model):
+    model = create_complete_model()
+
+    # Treinamento com dados simulados
+    X_train_sim, X_test_sim, Y_train_sim, Y_test_sim = train_test_split(X_simulated, Y_simulated, test_size=0.2)
+    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    model.fit(X_train_sim, Y_train_sim, epochs=10, batch_size=32, validation_split=0.2)
+
+    # Avaliação em dados simulados
+    Y_pred_sim = model.predict(X_test_sim) > 0.5
+    accuracy_sim = accuracy_score(Y_test_sim, Y_pred_sim)
+    st.write(f"Accuracy on Simulated Test Data: {accuracy_sim}")
+
+    # Avaliação em dados reais
+    X_train_real, X_test_real, Y_train_real, Y_test_real = train_test_split(X_real, Y_real, test_size=0.2)
+    Y_pred_real = model.predict(X_test_real) > 0.5
+    accuracy_real = accuracy_score(Y_test_real, Y_pred_real)
+    st.write(f"Accuracy on Real Test Data: {accuracy_real}")
