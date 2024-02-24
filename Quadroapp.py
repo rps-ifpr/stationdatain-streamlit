@@ -1,71 +1,99 @@
-import tensorflow as tf
-from tensorflow.keras import layers, models
-def create_cnn(input_shape):
-    model = models.Sequential([
-        layers.Conv2D(32, (3, 3), activation='relu', input_shape=input_shape),
-        layers.MaxPooling2D((2, 2)),
-        layers.Conv2D(64, (3, 3), activation='relu'),
-        layers.MaxPooling2D((2, 2)),
-        layers.Conv2D(64, (3, 3), activation='relu'),
-        layers.Flatten(),
-        layers.Dense(64, activation='relu')
-    ])
-    return model
+import matplotlib.pyplot as plt
+import numpy as np
 
-def create_lstm(input_shape):
-    model = models.Sequential([
-        layers.LSTM(64, return_sequences=True, input_shape=input_shape),
-        layers.LSTM(32),
-        layers.Dense(32, activation='relu')
-    ])
-    return model
+# Configurações iniciais
+num_experimentos = 1000
+ponto_inicial = 50  # Ajustando para iniciar no meio da escala
+np.random.seed(0)  # Para reprodutibilidade
 
-def create_dnn(input_shape):
-    model = models.Sequential([
-        layers.Dense(64, activation='relu', input_shape=input_shape),
-        layers.Dense(32, activation='relu'),
-        layers.Dense(32, activation='relu')
-    ])
-    return model
+# Função para simular a eficácia dentro de 0 a 100
+def simular_eficacia(ponto_inicial, variacao, num_experimentos):
+    eficacia = np.cumsum(np.random.rand(num_experimentos) * variacao - variacao / 2) + ponto_inicial
+    return np.clip(eficacia, 0, 100)  # Garantindo que os valores estejam entre 0 e 100
 
-class AttentionLayer(layers.Layer):
-    def __init__(self, **kwargs):
-        super(AttentionLayer, self).__init__(**kwargs)
+# Simulação da eficácia para representação conjunta e coordenada
+variacao = 0.2
+eficacia_conjunta_satelite = simular_eficacia(ponto_inicial, variacao, num_experimentos)
+eficacia_conjunta_temporal = simular_eficacia(ponto_inicial, variacao, num_experimentos)
+eficacia_conjunta_meteorologico = simular_eficacia(ponto_inicial, variacao, num_experimentos)
+eficacia_conjunta_umidade = simular_eficacia(ponto_inicial, variacao, num_experimentos)
 
-    def call(self, inputs):
-        # Supondo que `inputs` seja uma lista de tensores [h_sat, h_temp, h_meteo, h_solo, h_cult]
-        # Concatena as entradas
-        x = tf.concat(inputs, axis=-1)
-        # Aplica atenção
-        attention_scores = tf.nn.softmax(layers.Dense(1)(x), axis=1)
-        weighted_output = x * attention_scores
-        return tf.reduce_sum(weighted_output, axis=1)
-def create_final_model(input_shapes):
-    # Cria as sub-redes
-    cnn_input = layers.Input(shape=input_shapes['satellite'])
-    lstm_input = layers.Input(shape=input_shapes['temporal'])
-    dnn_input = layers.Input(shape=input_shapes['structured'])
+eficacia_coordenada_satelite = simular_eficacia(ponto_inicial, variacao, num_experimentos)
+eficacia_coordenada_temporal = simular_eficacia(ponto_inicial, variacao, num_experimentos)
+eficacia_coordenada_meteorologico = simular_eficacia(ponto_inicial, variacao, num_experimentos)
+eficacia_coordenada_umidade = simular_eficacia(ponto_inicial, variacao, num_experimentos)
 
-    cnn = create_cnn(input_shapes['satellite'])(cnn_input)
-    lstm = create_lstm(input_shapes['temporal'])(lstm_input)
-    dnn = create_dnn(input_shapes['structured'])(dnn_input)
+# Gráfico para Representação Conjunta
+plt.figure(figsize=(14, 7))
+plt.plot(eficacia_conjunta_satelite, label='Satélite', color='blue', linestyle='-')
+plt.plot(eficacia_conjunta_temporal, label='Temporal', color='green', linestyle='-')
+plt.plot(eficacia_conjunta_meteorologico, label='Meteorológico', color='red', linestyle='-')
+plt.plot(eficacia_conjunta_umidade, label='Umidade', color='orange', linestyle='-')
+plt.title('Eficácia da Representação Conjunta por Tipo de Entrada')
+plt.xlabel('Número do Experimento')
+plt.ylabel('Eficácia (%)')
+plt.legend()
+plt.grid(True, linestyle='--', linewidth=0.5)
+plt.tight_layout()
 
-    # Fusão com atenção
-    fused = AttentionLayer()([cnn, lstm, dnn])
+# Gráfico para Representação Coordenada
+plt.figure(figsize=(14, 7))
+plt.plot(eficacia_coordenada_satelite, label='Satélite', color='blue', linestyle='--')
+plt.plot(eficacia_coordenada_temporal, label='Temporal', color='green', linestyle='--')
+plt.plot(eficacia_coordenada_meteorologico, label='Meteorológico', color='red', linestyle='--')
+plt.plot(eficacia_coordenada_umidade, label='Umidade', color='orange', linestyle='--')
+plt.title('Eficácia da Representação Coordenada por Tipo de Entrada')
+plt.xlabel('Número do Experimento')
+plt.ylabel('Eficácia (%)')
+plt.legend()
+plt.grid(True, linestyle='--', linewidth=0.5)
+plt.tight_layout()
 
-    # Camada de decisão
-    decision_output = layers.Dense(1, activation='sigmoid')(fused)
+plt.show()
 
-    model = models.Model(inputs=[cnn_input, lstm_input, dnn_input], outputs=decision_output)
 
-    return model
 
-model = create_final_model({
-    'satellite': (64, 64, 3),  # Exemplo de shape para imagens de satélite
-    'temporal': (120, 10),     # Exemplo de shape para séries temporais (120 timesteps, 10 features)
-    'structured': (10,)        # Exemplo de shape para dados estruturados (10 features)
-})
 
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
-# model.fit(...) # Adicione aqui o treinamento com seus dado
+
+
+
+
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Simulando dados de exemplo para 4 tipos de entradas
+# Supondo que cada tipo de entrada tenha um parâmetro chave que podemos medir
+# Estes são valores simulados para fins de visualização
+
+# Dados de satélite (por exemplo, brilho médio)
+satellite_brightness = np.random.uniform(0.5, 1.0, 100)
+
+# Dados temporais (por exemplo, variabilidade ao longo do tempo)
+temporal_variability = np.random.uniform(0.1, 0.9, 100)
+
+# Dados meteorológicos (por exemplo, índice de precipitação médio)
+weather_precipitation = np.random.uniform(0.2, 1.0, 100)
+
+# Dados de umidade do solo (por exemplo, nível médio de umidade)
+soil_moisture = np.random.uniform(0.3, 0.8, 100)
+
+# Criando o gráfico de dispersão
+plt.figure(figsize=(10, 6))
+
+# Scatter plots para cada tipo de entrada
+plt.scatter(satellite_brightness, np.zeros_like(satellite_brightness) + 1, alpha=0.6, label='Satélite', color='blue')
+plt.scatter(temporal_variability, np.zeros_like(temporal_variability) + 2, alpha=0.6, label='Temporal', color='red')
+plt.scatter(weather_precipitation, np.zeros_like(weather_precipitation) + 3, alpha=0.6, label='Meteorológico', color='green')
+plt.scatter(soil_moisture, np.zeros_like(soil_moisture) + 4, alpha=0.6, label='Umidade do Solo', color='orange')
+
+# Ajustando os detalhes do gráfico
+plt.yticks([1, 2, 3, 4], ['Satélite', 'Temporal', 'Meteorológico', 'Umidade do Solo'])
+plt.ylabel('Tipo de Entrada')
+plt.xlabel('Valor Simulado')
+plt.title('')
+plt.legend()
+
+plt.show()
