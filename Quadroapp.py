@@ -23,10 +23,10 @@ import numpy as np
 
 # Simulando um conjunto de dados com valores aleatórios para as variáveis de interesse
 np.random.seed(0)
-data = np.random.rand(100, 5)  # 100 observações e 5 características
+data = np.random.rand(200, 5)  # 100 observações e 5 características
 
 # Simulando nomes de colunas como as características do seu modelo
-columns = ['Satélite', 'Série Temporal', 'Meteorológico', 'Umidade do Solo', 'Informação das Culturas']
+columns = ['Satélite', 'Série Temporal', 'Meteorológico', 'Umidade do Solo', 'Infor Culturas']
 
 # Calculando a matriz de correlação
 correlation_matrix = np.corrcoef(data, rowvar=False)
@@ -34,12 +34,8 @@ correlation_matrix = np.corrcoef(data, rowvar=False)
 # Criando o heatmap de correlação
 plt.figure(figsize=(8, 6))
 sns.heatmap(correlation_matrix, annot=True, xticklabels=columns, yticklabels=columns, cmap='coolwarm', center=0)
-plt.title('Heatmap de Correlação das Características')
+plt.title('')
 plt.show()
-
-
-
-
 
 
 import numpy as np
