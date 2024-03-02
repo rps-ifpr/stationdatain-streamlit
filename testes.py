@@ -8,7 +8,6 @@ from sklearn.metrics import classification_report, confusion_matrix
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-
 # Geração de Dados Sintéticos
 def gerar_dados_sinteticos(num_amostras=1000):
     X = np.random.randn (num_amostras, 10)
@@ -70,8 +69,6 @@ if st.button ('Gerar Dados e Treinar Modelo'):
     relatorio = classification_report (Y_teste, Y_predito, output_dict=True)
     st.write ('Relatório de Classificação:')
     st.dataframe (pd.DataFrame (relatorio).transpose ())
-
-
 
 
 import matplotlib.pyplot as plt
