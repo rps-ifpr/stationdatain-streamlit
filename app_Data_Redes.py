@@ -18,12 +18,13 @@ st.title('Treinamento de Modelo e Visualização de Métricas')
 def generate_synthetic_data(num_samples=10):
     num_hours = 30 * 24 * 12  # 4320 pontos de dados para simular entradas a cada hora durante 6 meses
     X_satellite = np.random.rand(num_samples, 128, 128, 3)  # Imagens de satélite
-    X_temporal = np.random.rand(num_samples, 1, num_hours)  # Dados de séries temporais ajustados
+    X_temporal = np.random.rand(num_samples, 4320, 1)  # Dados de séries temporais ajustados
     X_weather = np.random.rand(num_samples, 10)  # Dados meteorológicos
     X_soil = np.random.rand(num_samples, 5)  # Dados de umidade do solo
     X_crop_info = np.random.rand(num_samples, 7)  # Informações sobre as culturas
     Y = np.random.randint(2, size=(num_samples, 1))  # Saídas binárias (0 ou 1)
     return X_satellite, X_temporal, X_weather, X_soil, X_crop_info, Y
+
 
 # Botão para gerar e visualizar dados sintéticos
 if st.button ('Gerar e Visualizar Dados Sintéticos'):
