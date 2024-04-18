@@ -17,12 +17,12 @@ st.title('Treinamento de Modelo e Visualização de Métricas')
 # Definição da função generate_synthetic_data
 def generate_synthetic_data(num_samples=10):
     num_hours = 30 * 24 * 12  # 4320 pontos de dados para simular entradas a cada hora durante 6 meses
-    X_satellite = np.random.rand (num_samples, 128, 128, 3)  # Imagens de satélite
-    X_temporal = np.random.rand (num_samples, num_hours, 1)  # Dados de séries temporais ajustados
-    X_weather = np.random.rand (num_samples, 10)  # Dados meteorológicos
-    X_soil = np.random.rand (num_samples, 5)  # Dados de umidade do solo
-    X_crop_info = np.random.rand (num_samples, 7)  # Informações sobre as culturas
-    Y = np.random.randint (2, size=(num_samples, 1))  # Saídas binárias (0 ou 1)
+    X_satellite = np.random.rand(num_samples, 128, 128, 3)  # Imagens de satélite
+    X_temporal = np.random.rand(num_samples, 1, num_hours)  # Dados de séries temporais ajustados
+    X_weather = np.random.rand(num_samples, 10)  # Dados meteorológicos
+    X_soil = np.random.rand(num_samples, 5)  # Dados de umidade do solo
+    X_crop_info = np.random.rand(num_samples, 7)  # Informações sobre as culturas
+    Y = np.random.randint(2, size=(num_samples, 1))  # Saídas binárias (0 ou 1)
     return X_satellite, X_temporal, X_weather, X_soil, X_crop_info, Y
 
 # Botão para gerar e visualizar dados sintéticos
@@ -266,3 +266,8 @@ def evaluate_model_performance(X_real, Y_real, X_simulated, Y_simulated, create_
     Y_pred_real = model.predict(X_test_real) > 0.5
     accuracy_real = accuracy_score(Y_test_real, Y_pred_real)
     st.write(f"Accuracy on Real Test Data: {accuracy_real}")
+
+    # Matriz de confusão para avaliar o desempenho do modelo em dados reais
+    confusion_mat = confusion_matrix(Y_test_real, Y_pred_real)
+    st.write("Confusion Matrix on Real Test Data:")
+    st.write(confusion_mat)
