@@ -64,10 +64,10 @@ if st.button ('Gerar e Visualizar Dados Sintéticos'):
 # Definição das Sub-Redes
 def satellite_subnetwork(input_shape):
     input_layer = Input(shape=input_shape)
-    x = Conv2D(64, (3, 3), activation='relu', padding='same')(input_layer)
+    x = Conv2D(64, (3, 3), activation='relu', padding='same', name='sat_conv1')(input_layer)  # Nome único para a primeira camada Conv2D
     x = BatchNormalization()(x)
     x = MaxPooling2D()(x)
-    x = Conv2D(128, (3, 3), activation='relu', padding='same')(x)
+    x = Conv2D(128, (3, 3), activation='relu', padding='same', name='sat_conv2')(x)  # Nome único para a segunda camada Conv2D
     x = BatchNormalization()(x)
     x = MaxPooling2D()(x)
     x = Flatten()(x)
@@ -76,8 +76,8 @@ def satellite_subnetwork(input_shape):
 
 def temporal_subnetwork(input_shape):
     input_layer = Input(shape=input_shape)
-    x = LSTM(50, return_sequences=True)(input_layer)
-    x = LSTM(50)(x)
+    x = LSTM(50, return_sequences=True, name='temp_lstm1')(input_layer)  # Nome único para a primeira camada LSTM
+    x = LSTM(50, name='temp_lstm2')(x)  # Nome único para a segunda camada LSTM
     x = Dropout(0.5)(x)
     return Model(inputs=input_layer, outputs=x, name='temporal_subnetwork')
 
