@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Definindo as características e suas respectivas importâncias
-features = ['Satélite', 'Série Temporal', 'Meteorológico', 'Umidade do Solo', 'Informação das Culturas']
+features = ['Satélite', 'Série Temporal', 'Meteorológico', 'Umidade Solo', 'Infor. Culturas']
 importances = [0.35, 0.65, 0.50, 0.75, 0.90]
 colors = ['blue', 'orange', 'green', 'red', 'purple']
 
