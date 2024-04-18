@@ -225,8 +225,6 @@ if st.button ('Visualizar Métricas de Treinamento', key='view_training_metrics'
     else:
         st.write ("Por favor, treine o modelo primeiro para visualizar as métricas.")
 
-
-
 # Supondo que X_real e X_simulated sejam seus dados reais e simulados
 # feature_index é o índice da característica que você deseja analisar
 
