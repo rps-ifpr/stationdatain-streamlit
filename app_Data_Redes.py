@@ -268,7 +268,9 @@ def evaluate_model_performance(X_real, Y_real, X_simulated, Y_simulated, create_
     accuracy_real = accuracy_score(Y_test_real, Y_pred_real)
     st.write(f"Accuracy on Real Test Data: {accuracy_real}")
 
-    # Matriz de confusão para avaliar o desempenho do modelo em dados reais
-    confusion_mat = confusion_matrix(Y_test_real, Y_pred_real)
-    st.write("Confusion Matrix on Real Test Data:")
-    st.write(confusion_mat)
+# Definição dos dados reais e simulados (substitua com seus próprios dados)
+X_real, Y_real = np.random.rand(100, 5), np.random.randint(2, size=100)
+X_simulated, Y_simulated = np.random.rand(100, 5), np.random.randint(2, size=100)
+
+
+
