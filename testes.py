@@ -33,14 +33,14 @@ def construir_modelo(dimensao_entrada):
 def plotar_metricas(historico):
     plt.figure (figsize=(10, 4))
     plt.subplot (1, 2, 1)
-    plt.plot (historico.history['accuracy'], label='Acurácia')
+    plt.plot (historico.history['accuracy'], label='Acurácia Treino')
     plt.plot (historico.history['val_accuracy'], label='Acurácia Validação')
     plt.xlabel ('Época')
     plt.ylabel ('Acurácia')
     plt.legend ()
 
     plt.subplot (1, 2, 2)
-    plt.plot (historico.history['loss'], label='Perda')
+    plt.plot (historico.history['loss'], label='Perda Treino')
     plt.plot (historico.history['val_loss'], label='Perda Validação')
     plt.xlabel ('Época')
     plt.ylabel ('Perda')
