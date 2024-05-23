@@ -1,26 +1,20 @@
 import ee
-import geemap
-import streamlit as st
-import rasterio
-import geopandas as gpd
-from sklearn.model_selection import train_test_split
-import matplotlib.pyplot as plt
 
+# Seu ID de cliente (substitua pelo seu ID real)
+client_id = '785957889466-i3l8rrgf64lb9lrdigbir3ev4jp6vt1j.apps.googleusercontent.com'
+
+# Autenticação com o ID do cliente
+ee.Authenticate(client_id=client_id)
+
+# Inicialização
 ee.Initialize()
 
-# Define a área de interesse como um polígono
-aoi = ee.Geometry.Polygon([[
-    [-50.0, -20.0],
-    [-50.0, -10.0],
-    [-40.0, -10.0],
-    [-40.0, -20.0],
-    [-50.0, -20.0]
-]])
+# Teste de acesso à API
+try:
+    # Tenta carregar uma imagem de exemplo
+    imagem = ee.Image('USGS/SRTMGL1_003')
+    print('Acesso à API confirmado! Informações da imagem:')
+    print(imagem.getInfo())
 
-# Carrega uma imagem Sentinel-2
-image = ee.ImageCollection('COPERNICUS/S2').filterDate('2023-01-01', '2023-01-31').filterBounds(aoi).first()
-
-
-st.title('Visualização da Imagem de Satélite')
-st.map(geemap.ee_to_geojson(image.geometry()))
-st.image(geemap.ee_to_base64(image.visualize(**{'bands': ['B4', 'B3', 'B2'], 'min': 0, 'max': 3000})))
+except ee.EEException as e:
+    print(f'Erro ao acessar a API: {e}')
