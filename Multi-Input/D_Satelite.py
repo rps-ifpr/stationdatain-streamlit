@@ -1,22 +1,14 @@
-<<<<<<< HEAD
 # Este código encontra as imagens de posição de area de trabalho
 import streamlit as st
-=======
->>>>>>> parent of 81f839d (UpDate)
 import ee
+import os
 
-<<<<<<< HEAD
-# Credenciais da conta de serviço
 
-=======
-# Seu ID de cliente (substitua pelo seu ID real)
-client_id = '785957889466-i3l8rrgf64lb9lrdigbir3ev4jp6vt1j.apps.googleusercontent.com'
->>>>>>> parent of 81f839d (UpDate)
 
-# Autenticação com o ID do cliente
-ee.Authenticate(client_id=client_id)
+# Autenticação
+credentials = ee.ServiceAccountCredentials(service_account, caminho_json)
+ee.Initialize(credentials)
 
-<<<<<<< HEAD
 # Função para exibir a imagem com resolução ajustada e realce
 def exibir_imagem(imagem):
     # Realce de nitidez (opcional - ajuste os parâmetros conforme necessário)
@@ -36,19 +28,10 @@ def exibir_imagem(imagem):
         **vis_params
     })
     st.image(url)
-=======
-# Inicialização
-ee.Initialize()
->>>>>>> parent of 81f839d (UpDate)
 
-# Teste de acesso à API
-try:
-    # Tenta carregar uma imagem de exemplo
-    imagem = ee.Image('USGS/SRTMGL1_003')
-    print('Acesso à API confirmado! Informações da imagem:')
-    print(imagem.getInfo())
+# Interface Streamlit
+st.title('Aplicação Streamlit com Earth Engine')
 
-<<<<<<< HEAD
 # Coordenadas do ponto central
 latitude = -25.68336105699554
 longitude = -53.786481243561795
@@ -73,7 +56,3 @@ imagem = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED') \
 
 # Exibir a imagem com resolução melhorada
 exibir_imagem(imagem)
-=======
-except ee.EEException as e:
-    print(f'Erro ao acessar a API: {e}')
->>>>>>> parent of 81f839d (UpDate)
