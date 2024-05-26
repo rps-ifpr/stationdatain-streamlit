@@ -4,10 +4,7 @@ import ee
 import os
 import datetime
 import requests
-
-# Credenciais da conta de serviço
 from geopandas import clip
-
 
 
 # Autenticação
@@ -68,21 +65,22 @@ geometry = ee.Geometry.Rectangle([
 data_inicio = '2023-09-01'
 data_fim = '2023-12-01'
 
-# Carregar as imagens (CORRIGIDO)
+# Carregar as imagens
 imagens = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED') \
     .filterBounds(geometry) \
     .filterDate(ee.Date(data_inicio), ee.Date(data_fim)) \
     .sort('CLOUDY_PIXEL_PERCENTAGE')
 
-# Pegar as 20 primeiras imagens
-imagens_processadas = imagens.toList(20).map(lambda image: pre_processar_imagem(ee.Image(image)))
+# Pegar a primeira imagem da coleção
+imagem = ee.Image(imagens.first())
 
-# Baixar as imagens pré-processadas
-for i in range(20):
-    imagem = ee.Image(imagens_processadas.get(i))
-    data = ee.Date(imagem.get('system:time_start')).format('YYYY-MM-dd').getInfo()
-    nome_arquivo = f'imagem_{data}.tif'
-    baixar_imagem(imagem, nome_arquivo)
+# Pré-processar a imagem
+imagem_processada = pre_processar_imagem(imagem)
+
+# Baixar a imagem pré-processada
+data = ee.Date(imagem.get('system:time_start')).format('YYYY-MM-dd').getInfo()
+nome_arquivo = f'imagem_{data}.tif'
+baixar_imagem(imagem_processada, nome_arquivo)
 
 # Exibir mensagem de conclusão
-st.success(f'Download de 20 imagens concluído!')
+st.success(f'Download da imagem concluído!')

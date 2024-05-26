@@ -1,13 +1,14 @@
-# Este código encontra as imagens de posição de area de trabalho
 import streamlit as st
 import ee
-import os
-
+import json
 
 
 # Autenticação
-credentials = ee.ServiceAccountCredentials(service_account, caminho_json)
-ee.Initialize(credentials)
+with open(caminho_json) as json_file:
+    credentials = ee.ServiceAccountCredentials(service_account, json_file.read())
+
+# Inicialização da API do Earth Engine
+ee.Initialize(credentials)  # Inicializa a API do Earth Engine com as credenciais
 
 # Função para exibir a imagem com resolução ajustada e realce
 def exibir_imagem(imagem):
@@ -20,10 +21,10 @@ def exibir_imagem(imagem):
         'bands': ['B4', 'B3', 'B2'],
         'min': 0,
         'max': 3000,
-        'gamma': 1.0
+        'gamma': 1.8
     }
     url = sharpened_image.getThumbUrl({
-        'dimensions': 1800,
+        'dimensions': 1024,
         'format': 'png',
         **vis_params
     })
@@ -37,7 +38,7 @@ latitude = -25.68336105699554
 longitude = -53.786481243561795
 
 # Distância a partir do ponto central para formar o quadrado (em metros)
-distancia = 800  # Ajuste este valor para controlar o tamanho do quadrado
+distancia = 600  # Ajuste este valor para controlar o tamanho do quadrado
 
 # Criar um objeto Geometry com o quadrado
 geometry = ee.Geometry.Rectangle([
