@@ -5,8 +5,8 @@ import datetime
 import requests
 
 # Credenciais da conta de serviço
-service_account = 'Estes Dados Foram ocultados'
-caminho_json = 'Estes Dados Foram ocultados'
+service_account = 'deepmodel1@estacao-ifpr.iam.gserviceaccount.com'
+caminho_json = 'estacao-ifpr-ade6bb55d1dc.json'
 
 # Autenticação
 credentials = ee.ServiceAccountCredentials(service_account, caminho_json)
@@ -49,11 +49,11 @@ st.title('Aplicação Streamlit com Earth Engine')
 
 # Coordenadas da área 22JBR (extraídas do MGRS_REF)
 latitude_min = -27.107979524
-latitude_max = -26.18823449
+latitude_max = -25.286086075548
 longitude_min = -54.025311665
-longitude_max = -53.001695913
+longitude_max = -53.9792316344072
 
-# Criar um objeto Geometry com o quadrado (CORRIGIDO)
+# Criar um objeto Geometry com o quadrado
 geometry = ee.Geometry.Rectangle([
     longitude_min,
     latitude_min,

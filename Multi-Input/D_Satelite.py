@@ -1,59 +1,90 @@
-import streamlit as st
 import ee
-import json
+import os
+import datetime
+import requests
+import geemap
 
+# Credenciais da conta de serviço
+service_account = 'Estes Dados Foram ocultados'
+caminho_json = 'Estes Dados Foram ocultados'
 
 # Autenticação
-with open(caminho_json) as json_file:
-    credentials = ee.ServiceAccountCredentials(service_account, json_file.read())
+credentials = ee.ServiceAccountCredentials(service_account, caminho_json)
+ee.Initialize(credentials)
 
-# Inicialização da API do Earth Engine
-ee.Initialize(credentials)  # Inicializa a API do Earth Engine com as credenciais
-
-# Função para exibir a imagem com resolução ajustada e realce
-def exibir_imagem(imagem):
-    # Realce de nitidez (opcional - ajuste os parâmetros conforme necessário)
-    sharpened_image = imagem.convolve(ee.Kernel.gaussian(radius=1, sigma=1, magnitude=3)).subtract(
-        imagem.convolve(ee.Kernel.gaussian(radius=1, sigma=1))
-    )
-
-    vis_params = {
-        'bands': ['B4', 'B3', 'B2'],
-        'min': 0,
-        'max': 3000,
-        'gamma': 1.8
-    }
-    url = sharpened_image.getThumbUrl({
-        'dimensions': 1024,
-        'format': 'png',
-        **vis_params
+# Função para baixar a imagem
+def baixar_imagem(imagem, nome_arquivo):
+    url = imagem.getDownloadURL({
+        'name': nome_arquivo,
+        'scale': 10,  # Ajuste a escala conforme necessário
+        'region': geometry
     })
-    st.image(url)
+    print(f'Baixando: {nome_arquivo} - URL: {url}')
+    response = requests.get(url, stream=True)
+    with open(nome_arquivo, 'wb') as f:
+        for chunk in response.iter_content(chunk_size=1024):
+            if chunk:
+                f.write(chunk)
 
-# Interface Streamlit
-st.title('Aplicação Streamlit com Earth Engine')
+# Função para pré-processar a imagem
+def pre_processar_imagem(imagem):
+    # 1. Correção Geométrica (opcional)
+    # imagem = imagem.reproject(crs='EPSG:4326', scale=10)
 
-# Coordenadas do ponto central
-latitude = -25.68336105699554
-longitude = -53.786481243561795
+    # 2. Máscara de Nuvens
+    mascara_nuvens = imagem.select('CLOUDY_PIXEL_PERCENTAGE').lt(5)  # Ajuste o limite de nuvens
+    imagem = imagem.updateMask(mascara_nuvens)
 
-# Distância a partir do ponto central para formar o quadrado (em metros)
-distancia = 600  # Ajuste este valor para controlar o tamanho do quadrado
+    # 3. Índices de Vegetação
+    ndvi = imagem.normalizedDifference(['B8', 'B4']).rename('NDVI')
+    imagem = imagem.addBands(ndvi)
+
+    # 4. Cálculo de Bandas Adicionais (se necessário)
+    # ...
+
+    return imagem
+
+# Coordenadas da área 22JBR (extraídas do MGRS_REF)
+latitude_min = -27.107979524
+latitude_max = -25.286086075548
+longitude_min = -54.025311665
+longitude_max = -53.9792316344072
 
 # Criar um objeto Geometry com o quadrado
 geometry = ee.Geometry.Rectangle([
-    longitude - distancia / 111320,
-    latitude - distancia / 111320,
-    longitude + distancia / 111320,
-    latitude + distancia / 111320
+    longitude_min,
+    latitude_min,
+    longitude_max,
+    latitude_max
 ])
 
-# Carregar a imagem Sentinel-2 mais recente do dia
-imagem = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED') \
-    .filterBounds(geometry) \
-    .sort('CLOUDY_PIXEL_PERCENTAGE') \
-    .first() \
-    .clip(geometry)
+# Definir o intervalo de datas
+data_inicio = '2023-09-01'
+data_fim = '2023-12-01'
 
-# Exibir a imagem com resolução melhorada
-exibir_imagem(imagem)
+# Carregar as imagens (CORRIGIDO)
+imagens = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED') \
+    .filterBounds(geometry) \
+    .filterDate(ee.Date(data_inicio), ee.Date(data_fim)) \
+    .sort('CLOUDY_PIXEL_PERCENTAGE') \
+    .select('CLOUDY_PIXEL_PERCENTAGE')  # Selecione a banda antes do .first()
+
+
+# Pré-processar as imagens
+imagens_processadas = imagens.map(pre_processar_imagem)
+
+# Baixar as imagens pré-processadas
+for i in range(imagens_processadas.size().getInfo()):
+    imagem = ee.Image(imagens_processadas.toList(imagens_processadas.size()).get(i))
+    data = ee.Date(imagem.get('system:time_start')).format('YYYY-MM-dd').getInfo()
+    nome_arquivo = f'imagem_{data}.tif'
+    baixar_imagem(imagem, nome_arquivo)
+
+# Exibir mensagem de conclusão
+print(f'Download de {imagens_processadas.size().getInfo()} imagens concluído!')
+
+# Visualização com geemap
+Map = geemap.Map()  # Cria um mapa interativo
+Map.addLayer(imagens_processadas, {}, 'Imagem Processada')
+Map.centerObject(geometry, 10) # Centra o mapa na área
+Map.show()  # Exibe o mapa
