@@ -48,9 +48,16 @@ input_dir = "C:/IFPR-CONTEUDO/GITHUB/stationdatain-streamlit/Multi-Input/img_sat
 # Diretório de saída para as imagens pré-processadas
 output_dir = "C:/IFPR-CONTEUDO/GITHUB/stationdatain-streamlit/Multi-Input/preprocessed_images"
 
+# Diretório para os arquivos de label
+labels_dir = "C:/IFPR-CONTEUDO/GITHUB/stationdatain-streamlit/Multi-Input/preprocessed_images/labels"
+
 # Número de imagens a serem selecionadas de cada tipo
 num_tiff_images = 21  # Ajuste para o número de imagens TIFF
 num_jpg_images = 18  # Ajuste para o número de imagens JPG
+
+# Cria a pasta de saída, se não existir
+os.makedirs(output_dir, exist_ok=True)
+os.makedirs(labels_dir, exist_ok=True)
 
 # Seleciona as melhores imagens TIFF
 best_tiff_images = select_best_images(input_dir, num_tiff_images, "tiff")
@@ -58,10 +65,7 @@ best_tiff_images = select_best_images(input_dir, num_tiff_images, "tiff")
 # Seleciona as melhores imagens JPG
 best_jpg_images = select_best_images(input_dir, num_jpg_images, "jpg")
 
-# Cria a pasta de saída, se não existir
-os.makedirs(output_dir, exist_ok=True)
-
-# Pré-processa e salva as imagens
+# Pré-processa e salva as imagens e cria os arquivos de label
 for i, filename in enumerate(best_tiff_images):
     image_path = os.path.join(input_dir, filename)
     preprocessed_image = preprocess_image(image_path, resize_shape=(224, 224))
@@ -69,6 +73,12 @@ for i, filename in enumerate(best_tiff_images):
         output_filename = f"tiff_{i}_preprocessed.jpg"
         output_path = os.path.join(output_dir, output_filename)
         cv2.imwrite(output_path, preprocessed_image)
+
+        # Cria o arquivo de label
+        label_filename = f"tiff_{i}_preprocessed.txt"
+        label_path = os.path.join(labels_dir, label_filename)
+        with open(label_path, "w") as f:
+            f.write("0")  # Escreve o label 0 para as imagens TIFF
 
 for i, filename in enumerate(best_jpg_images):
     image_path = os.path.join(input_dir, filename)
@@ -78,4 +88,10 @@ for i, filename in enumerate(best_jpg_images):
         output_path = os.path.join(output_dir, output_filename)
         cv2.imwrite(output_path, preprocessed_image)
 
-print("Imagens pré-processadas salvas com sucesso!")
+        # Cria o arquivo de label
+        label_filename = f"jpg_{i}_preprocessed.txt"
+        label_path = os.path.join(labels_dir, label_filename)
+        with open(label_path, "w") as f:
+            f.write("1")  # Escreve o label 1 para as imagens JPG
+
+print("Imagens pré-processadas e arquivos de label criados com sucesso!")
