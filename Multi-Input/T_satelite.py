@@ -115,7 +115,7 @@ def visualizar_resultados(history):
 X, y = carregar_dados ("C:/IFPR-CONTEUDO/GITHUB/stationdatain-streamlit/Multi-Input/preprocessed_images",
                        "C:/IFPR-CONTEUDO/GITHUB/stationdatain-streamlit/Multi-Input/preprocessed_images/labels")
 
-# Pré-processa os dados 
+# Pré-processa os dados
 X = preprocess_data (X)
 
 # Treina o modelo
