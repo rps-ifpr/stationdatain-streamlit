@@ -52,7 +52,7 @@ output_dir = "C:/IFPR-CONTEUDO/GITHUB/stationdatain-streamlit/Multi-Input/prepro
 labels_dir = "C:/IFPR-CONTEUDO/GITHUB/stationdatain-streamlit/Multi-Input/preprocessed_images/labels"
 
 # Número de imagens a serem selecionadas de cada tipo
-num_images = 18
+num_images = 21
 
 # Cria a pasta de saída, se não existir
 os.makedirs(output_dir, exist_ok=True)
