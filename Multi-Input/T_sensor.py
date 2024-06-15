@@ -26,7 +26,7 @@ def preprocessar_dados(df):
 st.title("Pré-processamento e Classificação de Dados de Sensores de Solo")
 
 # Ler dados do arquivo CSV
-df = pd.read_csv('dados_sensor.csv', parse_dates=['data'], dtype={'estagio': 'category'})  # Lê o arquivo CSV e converte a coluna 'data' para o tipo Timestamp
+df = pd.read_csv('dados_sensor.csv', parse_dates=['data'])  # Lê o arquivo CSV e converte a coluna 'data' para o tipo Timestamp
 
 # Pré-processar os dados
 df_preprocessado = preprocessar_dados(df.copy())
@@ -139,9 +139,6 @@ from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, accuracy_score, precision_score, recall_score, f1_score
 from sklearn.tree import DecisionTreeRegressor  # Importa o modelo de Árvore de Decisão para Regressão
-
-# Criar uma coluna para o estágio de desenvolvimento
-df['estagio'] = pd.Categorical(df['estagio'], categories=['Crescimento', 'Floração', 'Início da Floração', 'Pico da Floração', 'Fim da Floração', 'Colheita'], ordered=True)
 
 # Separar os dados em conjuntos de treinamento e teste
 X_train, X_test, y_train, y_test = train_test_split(df[['estagio', 'Temperatura (°C)', 'Umidade Rel. (%)']], df['Volume de Água (L)'], test_size=0.2, random_state=42)

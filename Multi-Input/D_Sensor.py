@@ -20,8 +20,10 @@ def preprocessar_dados(df):
 # Interface Streamlit
 st.title("Pré-processamento de Dados de Sensores de Solo")
 
-# Ler dados do arquivo CSV
 df = pd.read_csv('dados_sensor.csv', parse_dates=['data'])  # Lê o arquivo CSV e converte a coluna 'data' para o tipo Timestamp
+
+# Criar uma coluna para o estágio de desenvolvimento
+df['estagio'] = pd.Categorical(df['estagio'], categories=['Crescimento', 'Floração', 'Início da Floração', 'Pico da Floração', 'Fim da Floração', 'Colheita'], ordered=True)
 
 # Pré-processar os dados
 df_preprocessado = preprocessar_dados(df.copy())
