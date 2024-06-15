@@ -9,11 +9,11 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.utils import to_categorical
-<<<<<<< HEAD
+
 from sklearn.metrics import confusion_matrix, roc_curve, auc, precision_score, recall_score, f1_score
-=======
+
 from sklearn.metrics import confusion_matrix
->>>>>>> parent of 444c522 (Create modelo_cnn_irrigacao.h5)
+
 import matplotlib.pyplot as plt
 
 # Diretório de entrada com as imagens
@@ -123,8 +123,6 @@ plt.xlabel("Classe Prevista")
 plt.ylabel("Classe Real")
 plt.show()
 
-<<<<<<< HEAD
-
 # Plotar a curva ROC
 plt.figure(figsize=(8, 6))
 plt.plot([0, 1], [0, 1], 'r--')  # Linha de referência
@@ -182,8 +180,6 @@ plt.show()
 # Definir um contador global
 i = 0
 
-=======
->>>>>>> parent of 444c522 (Create modelo_cnn_irrigacao.h5)
 # Salvar o modelo
 modelo_cnn.save(f"modelo_cnn_irrigacao_{i}.keras") # Adiciona o contador i para salvar com data ou numero
 i += 1

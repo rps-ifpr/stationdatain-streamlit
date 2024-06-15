@@ -1,192 +1,120 @@
-import streamlit as st
 import pandas as pd
-import numpy as np
+from sklearn.model_selection import train_test_split, learning_curve
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.preprocessing import StandardScaler
+import pickle
 import matplotlib.pyplot as plt
-from sklearn.cluster import KMeans
-from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error, accuracy_score, precision_score, recall_score, f1_score
-from sklearn.tree import DecisionTreeRegressor  # Importa o modelo de Árvore de Decisão para Regressão
+import numpy as np  # Importando numpy para gerar os tamanhos dos conjuntos de treinamento
 
-# Função para pré-processar os dados
-def preprocessar_dados(df):
-    # 1. Limpeza de Dados
-    df['umidade_solo'] = df['umidade_solo'][df['umidade_solo'] >= 0]  # Remover valores inválidos de umidade
-    df['condutividade_eletrica'] = df['condutividade_eletrica'][df['condutividade_eletrica'] >= 0]  # Remover valores inválidos de condutividade
-    df['temperatura_solo'] = df['temperatura_solo'][df['temperatura_solo'] >= 0]  # Remover valores inválidos de temperatura
+# Carregar os dados
+data = pd.read_csv("dados_sensor.csv", parse_dates=["data"])
 
-    # 2. Normalização (Min-Max Scaling Global)
-    df['umidade_solo'] = (df['umidade_solo'] - df['umidade_solo'].min()) / (df['umidade_solo'].max() - df['umidade_solo'].min())
-    df['condutividade_eletrica'] = (df['condutividade_eletrica'] - df['condutividade_eletrica'].min()) / (df['condutividade_eletrica'].max() - df['condutividade_eletrica'].min())
-    df['temperatura_solo'] = (df['temperatura_solo'] - df['temperatura_solo'].min()) / (df['temperatura_solo'].max() - df['temperatura_solo'].min())
-
-    return df
-
-# Interface Streamlit
-st.title("Pré-processamento e Classificação de Dados de Sensores de Solo")
-
-# Ler dados do arquivo CSV
-df = pd.read_csv('dados_sensor.csv', parse_dates=['data'])  # Lê o arquivo CSV e converte a coluna 'data' para o tipo Timestamp
-
-# Pré-processar os dados
-df_preprocessado = preprocessar_dados(df.copy())
-
-# Criar gráficos para comparação
-st.subheader("Dados Pré-processados")
-fig, axs = plt.subplots(3, 1, figsize=(10, 10))
-
-# Umidade do Solo
-axs[0].plot(df_preprocessado['data'], df_preprocessado['umidade_solo'], label="Pré-processado")
-axs[0].set_ylabel("Umidade do Solo (%)")
-axs[0].legend()
-
-# Condutividade Elétrica
-axs[1].plot(df_preprocessado['data'], df_preprocessado['condutividade_eletrica'], label="Pré-processado")
-axs[1].set_ylabel("Condutividade Elétrica (mS/cm)")
-axs[1].legend()
-
-# Temperatura do Solo
-axs[2].plot(df_preprocessado['data'], df_preprocessado['temperatura_solo'], label="Pré-processado")
-axs[2].set_ylabel("Temperatura do Solo (°C)")
-axs[2].legend()
-
-# Ajustar espaçamento entre os subplots
-plt.tight_layout()
-
-# Mostrar o gráfico
-st.pyplot(fig)
-
-# Análise Mensal - Agrupamento por Mês e cálculo da média
-st.subheader("Análise Mensal dos Dados")
-df['mes'] = df['data'].dt.month
-df_preprocessado['mes'] = df_preprocessado['data'].dt.month  # Adicione a coluna 'mes' ao df_preprocessado
-
-# Criar Gráficos Mensais
-fig, axs = plt.subplots(3, 1, figsize=(10, 10))
-
-# Criar uma lista para os meses
-meses = ['Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai']
-
-# Umidade do Solo
-for mes in range(1, 13):
-    df_mensal_bruto = df[df['mes'] == mes].groupby('data').mean()
-    df_mensal_preprocessado = df_preprocessado[df_preprocessado['mes'] == mes].groupby('data').mean()
-    axs[0].plot(df_mensal_bruto.index, df_mensal_bruto['umidade_solo'], label=f"Bruto - {meses[mes - 1]}")
-    axs[0].plot(df_mensal_preprocessado.index, df_mensal_preprocessado['umidade_solo'], label=f"Pré-processado - {meses[mes - 1]}")
-
-# Condutividade Elétrica
-for mes in range(1, 13):
-    df_mensal_bruto = df[df['mes'] == mes].groupby('data').mean()
-    df_mensal_preprocessado = df_preprocessado[df_preprocessado['mes'] == mes].groupby('data').mean()
-    axs[1].plot(df_mensal_bruto.index, df_mensal_bruto['condutividade_eletrica'], label=f"Bruto - {meses[mes - 1]}")
-    axs[1].plot(df_mensal_preprocessado.index, df_mensal_preprocessado['condutividade_eletrica'], label=f"Pré-processado - {meses[mes - 1]}")
-
-# Temperatura do Solo
-for mes in range(1, 13):
-    df_mensal_bruto = df[df['mes'] == mes].groupby('data').mean()
-    df_mensal_preprocessado = df_preprocessado[df_preprocessado['mes'] == mes].groupby('data').mean()
-    axs[2].plot(df_mensal_bruto.index, df_mensal_bruto['temperatura_solo'], label=f"Bruto - {meses[mes - 1]}")
-    axs[2].plot(df_mensal_preprocessado.index, df_mensal_preprocessado['temperatura_solo'], label=f"Pré-processado - {meses[mes - 1]}")
-
-
-# Ajustar espaçamento entre os subplots
-plt.tight_layout()
-
-# Mostrar o gráfico
-st.pyplot(fig)
-
-# Classificação dos Dados
-st.subheader("Classificação dos Dados")
-from sklearn.cluster import KMeans
-
-# Definir o número de clusters (classes)
-n_clusters = 3  # Ajustar conforme necessário
-
-# Criar o modelo KMeans
-kmeans = KMeans(n_clusters=n_clusters, random_state=0)
-
-# Ajustar o modelo aos dados pré-processados
-kmeans.fit(df_preprocessado[['umidade_solo', 'condutividade_eletrica', 'temperatura_solo']])
-
-# Obter as labels (classes) de cada ponto de dados
-labels = kmeans.labels_
-
-# Adicionar as labels ao DataFrame
-df_preprocessado['classe'] = labels
-
-# Criar um gráfico para visualizar os clusters
-st.subheader("Visualização dos Clusters")
-plt.figure(figsize=(10, 6))
-
-# Plotar os clusters usando diferentes cores para cada classe
-plt.scatter(df_preprocessado['umidade_solo'], df_preprocessado['condutividade_eletrica'], c=df_preprocessado['classe'], cmap='viridis')
-plt.xlabel("Umidade do Solo (%)")
-plt.ylabel("Condutividade Elétrica (mS/cm)")
-plt.title("Clusters de Dados de Sensores de Solo")
-
-st.pyplot(plt)
-
-# Criar tabela com estatísticas descritivas de cada cluster
-st.subheader("Estatísticas Descritivas dos Clusters")
-df_cluster_stats = df_preprocessado.groupby('classe').agg(media_umidade=('umidade_solo', 'mean'),
-                                                 media_condutividade=('condutividade_eletrica', 'mean'),
-                                                 media_temperatura=('temperatura_solo', 'mean'))
-
-st.dataframe(df_cluster_stats)
-
-# Treinar o modelo de regressão linear
-from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error, accuracy_score, precision_score, recall_score, f1_score
-from sklearn.tree import DecisionTreeRegressor  # Importa o modelo de Árvore de Decisão para Regressão
-
-# Separar os dados em conjuntos de treinamento e teste
-X_train, X_test, y_train, y_test = train_test_split(df[['estagio', 'Temperatura (°C)', 'Umidade Rel. (%)']], df['Volume de Água (L)'], test_size=0.2, random_state=42)
-
-# Criar o modelo de regressão linear
-modelo_regressao = DecisionTreeRegressor()  # Utiliza o modelo de Árvore de Decisão para Regressão
-
-# Treinar o modelo
-modelo_regressao.fit(X_train, y_train)
-
-# Fazer previsões no conjunto de teste
-y_pred = modelo_regressao.predict(X_test)
-
-# Avaliar o modelo
-mse = mean_squared_error(y_test, y_pred)
-print(f"Erro Quadrático Médio (MSE): {mse:.2f}")
-
-# Mostrar os resultados da regressão
-st.subheader("Avaliação do Modelo de Regressão")
-st.write(f"Erro Quadrático Médio (MSE): {mse:.2f}")
-
-# Criar um gráfico de dispersão para comparar os valores reais e previstos
-plt.figure(figsize=(8, 6))
-plt.scatter(y_test, y_pred)
-plt.xlabel("Valores Reais")
-plt.ylabel("Valores Previstos")
-plt.title("Comparação de Valores Reais e Previstos")
+# 2. Verificar outliers (usar boxplots)
+data.boxplot(column=["umidade_solo", "condutividade_eletrica", "temperatura_solo"])
 plt.show()
 
-# Calcular precisão, revocação e F1-score
-precision = precision_score(y_true_classes, y_pred_classes)
-recall = recall_score(y_true_classes, y_pred_classes)
-f1 = f1_score(y_true_classes, y_pred_classes)
+# 3. Lidar com outliers (opcional - remover outliers com base no boxplot)
+threshold = 1.5
+for col in ["umidade_solo", "condutividade_eletrica", "temperatura_solo"]:
+    Q1 = data[col].quantile(0.25)
+    Q3 = data[col].quantile(0.75)
+    IQR = Q3 - Q1
+    data = data[~((data[col] < (Q1 - threshold * IQR)) | (data[col] > (Q3 + threshold * IQR)))]
 
-# Mostrar os resultados
-st.title("Avaliação do Modelo de Regressão")
-st.write(f"Acurácia: {accuracy:.4f}")
-st.write(f"Precisão: {precision:.4f}")
-st.write(f"Revocação: {recall:.4f}")
-st.write(f"F1-Score: {f1:.4f}")
+# 3. Verificar valores faltantes
+print("Valores faltantes:", data.isnull().sum())
 
-# Criar um gráfico de barras para as métricas
-metrics = ['Acurácia', 'Precisão', 'Revocação', 'F1-Score']
-values = [accuracy, precision, recall, f1]
+# 3. Lidar com valores faltantes (remover linhas com valores faltantes)
+data.dropna(inplace=True)
 
+# Preparar os dados para o modelo
+# 1. Separar variáveis explicativas (X) e variável resposta (y)
+X = data[["temperatura_solo"]]  # Usar apenas temperatura como variável explicativa
+y = data["umidade_solo"]
+
+# 2. Dividir os dados em conjuntos de treinamento e teste
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# 3. Normalizar os dados (opcional, mas geralmente recomendado)
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# Criar o modelo de regressão linear
+model = LinearRegression()
+
+# Gerar a curva de aprendizagem
+train_sizes, train_scores, test_scores = learning_curve(
+    model, X_train, y_train, cv=5, scoring='neg_mean_squared_error', train_sizes=np.linspace(0.1, 1.0, 10)
+)
+
+# Calcular as médias e desvios padrão dos scores
+train_scores_mean = np.mean(train_scores, axis=1)
+train_scores_std = np.std(train_scores, axis=1)
+test_scores_mean = np.mean(test_scores, axis=1)
+test_scores_std = np.std(test_scores, axis=1)
+
+# Plotar a curva de aprendizagem
 plt.figure(figsize=(8, 6))
-plt.bar(metrics, values)
-plt.title("Métricas de Avaliação do Modelo de Regressão")
-plt.xlabel("Métricas")
-plt.ylabel("Valor")
+plt.plot(train_sizes, train_scores_mean, 'o-', color='blue', label='Treinamento')
+plt.plot(train_sizes, test_scores_mean, 'o-', color='green', label='Validação')
+plt.fill_between(train_sizes, train_scores_mean - train_scores_std,
+                 train_scores_mean + train_scores_std, alpha=0.1, color='blue')
+plt.fill_between(train_sizes, test_scores_mean - test_scores_std,
+                 test_scores_mean + test_scores_std, alpha=0.1, color='green')
+plt.xlabel("Tamanho do Conjunto de Treinamento")
+plt.ylabel("MSE")
+plt.title("Curva de Aprendizagem do Modelo de Regressão")
+plt.legend(loc="best")
+plt.grid(True)
+plt.show()
+
+# Treinar o modelo
+model.fit(X_train, y_train)
+
+# Fazer previsões
+y_pred = model.predict(X_test)
+
+# Calcular métricas de avaliação
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+
+# Imprimir os resultados
+print("Erro Quadrático Médio:", mse)
+print("Coeficiente de Determinação (R²):", r2)
+
+# Salvar o modelo treinado
+filename = 'modelo_sensor.sav'
+pickle.dump(model, open(filename, 'wb')) # Aqui está a linha que salva o modelo
+
+# --- Gráficos para Análise do Treinamento ---
+
+# 1. Gráfico de Dispersão (Temperatura vs. Umidade)
+plt.figure(figsize=(8, 6))
+plt.scatter(data["temperatura_solo"], data["umidade_solo"], s=20, c='blue', alpha=0.7)
+plt.xlabel("Temperatura do Solo (°C)")
+plt.ylabel("Umidade do Solo (%)")
+plt.title("Relação entre Temperatura e Umidade do Solo")
+plt.grid(True)
+plt.show()
+
+# 2. Histograma dos Resíduos (Modelo de Umidade)
+residuals = y_test - y_pred
+plt.figure(figsize=(8, 6))
+plt.hist(residuals, bins=20, edgecolor='black')
+plt.xlabel("Resíduos")
+plt.ylabel("Frequência")
+plt.title("Histograma dos Resíduos do Modelo de Umidade")
+plt.show()
+
+# 3. Gráfico de Previsões vs. Valores Reais (Modelo de Umidade)
+plt.figure(figsize=(8, 6))
+plt.scatter(y_pred, y_test, s=20, c='green', alpha=0.7)
+plt.xlabel("Previsões de Umidade do Solo (%)")
+plt.ylabel("Valores Reais de Umidade do Solo (%)")
+plt.title("Previsões vs. Valores Reais do Modelo de Umidade")
+plt.plot([min(y_test), max(y_test)], [min(y_test), max(y_test)], 'r--', label='Linha Ideal')
+plt.legend()
+plt.grid(True)
 plt.show()
