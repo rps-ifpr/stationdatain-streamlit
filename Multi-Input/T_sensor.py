@@ -6,6 +6,7 @@ from sklearn.cluster import KMeans
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, accuracy_score, precision_score, recall_score, f1_score
+from sklearn.tree import DecisionTreeRegressor  # Importa o modelo de Árvore de Decisão para Regressão
 
 # Função para pré-processar os dados
 def preprocessar_dados(df):
@@ -25,7 +26,7 @@ def preprocessar_dados(df):
 st.title("Pré-processamento e Classificação de Dados de Sensores de Solo")
 
 # Ler dados do arquivo CSV
-df = pd.read_csv('dados_sensor.csv', parse_dates=['data'])  # Lê o arquivo CSV e converte a coluna 'data' para o tipo Timestamp
+df = pd.read_csv('dados_sensor.csv', parse_dates=['data'], dtype={'estagio': 'category'})  # Lê o arquivo CSV e converte a coluna 'data' para o tipo Timestamp
 
 # Pré-processar os dados
 df_preprocessado = preprocessar_dados(df.copy())
@@ -137,6 +138,7 @@ st.dataframe(df_cluster_stats)
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, accuracy_score, precision_score, recall_score, f1_score
+from sklearn.tree import DecisionTreeRegressor  # Importa o modelo de Árvore de Decisão para Regressão
 
 # Criar uma coluna para o estágio de desenvolvimento
 df['estagio'] = pd.Categorical(df['estagio'], categories=['Crescimento', 'Floração', 'Início da Floração', 'Pico da Floração', 'Fim da Floração', 'Colheita'], ordered=True)
@@ -145,7 +147,7 @@ df['estagio'] = pd.Categorical(df['estagio'], categories=['Crescimento', 'Flora�
 X_train, X_test, y_train, y_test = train_test_split(df[['estagio', 'Temperatura (°C)', 'Umidade Rel. (%)']], df['Volume de Água (L)'], test_size=0.2, random_state=42)
 
 # Criar o modelo de regressão linear
-modelo_regressao = LinearRegression()
+modelo_regressao = DecisionTreeRegressor()  # Utiliza o modelo de Árvore de Decisão para Regressão
 
 # Treinar o modelo
 modelo_regressao.fit(X_train, y_train)
@@ -169,6 +171,25 @@ plt.ylabel("Valores Previstos")
 plt.title("Comparação de Valores Reais e Previstos")
 plt.show()
 
+# Calcular precisão, revocação e F1-score
+precision = precision_score(y_true_classes, y_pred_classes)
+recall = recall_score(y_true_classes, y_pred_classes)
+f1 = f1_score(y_true_classes, y_pred_classes)
 
+# Mostrar os resultados
+st.title("Avaliação do Modelo de Regressão")
+st.write(f"Acurácia: {accuracy:.4f}")
+st.write(f"Precisão: {precision:.4f}")
+st.write(f"Revocação: {recall:.4f}")
+st.write(f"F1-Score: {f1:.4f}")
 
+# Criar um gráfico de barras para as métricas
+metrics = ['Acurácia', 'Precisão', 'Revocação', 'F1-Score']
+values = [accuracy, precision, recall, f1]
 
+plt.figure(figsize=(8, 6))
+plt.bar(metrics, values)
+plt.title("Métricas de Avaliação do Modelo de Regressão")
+plt.xlabel("Métricas")
+plt.ylabel("Valor")
+plt.show()
