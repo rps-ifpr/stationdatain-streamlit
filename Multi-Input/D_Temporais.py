@@ -7,7 +7,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Carregar os dados
-data = pd.read_csv("dados1975-2015.csv", parse_dates=["data"], index_col="data")
+data = pd.read_csv("dados1975-2015.csv",
+                  parse_dates=[['Ano', 'Mês']], # cria uma coluna de data a partir de 'Ano' e 'Mês'
+                  index_col=0, # Define a coluna de data como índice
+                  sep="," # Define o separador das colunas como ',' se necessário
+                  )
+
+# Renomear a coluna de data
+data.index.names = ['data']
 
 # Selecionar as variáveis relevantes
 features = ["TempMed", "UmidRel", "Insolação"]
