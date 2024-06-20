@@ -1,104 +1,132 @@
 import pandas as pd
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split, learning_curve
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.preprocessing import StandardScaler
+import pickle
 import matplotlib.pyplot as plt
 import numpy as np
-from tensorflow.keras.callbacks import EarlyStopping, LearningRateScheduler
 
 # Carregar os dados
-data = pd.read_csv("dados1975-2015.csv", sep=",")  # Assumindo que o separador é ','
+data = pd.read_csv("dados1975-2015.csv", sep=",", header=None)
 
-# Criar uma coluna de data a partir de 'Ano' e 'Mês'
-data['data'] = pd.to_datetime(data[['Ano', 'Mês']])
-data.set_index('data', inplace=True) # Define a coluna de data como índice
+# Definir os nomes das colunas
+data.columns = ['Ano', 'Mes', 'Chuva', 'Evaporação', 'Insolação', 'TempMed', 'UmidRel', 'TempMaxAbs', 'TempMaxMed', 'TempMinAbs', 'TempMinMed']
 
-# Selecionar as variáveis relevantes
-features = ["TempMed", "UmidRel", "Insolação"]
-target = "Evaporação"
+# Criar uma coluna de data a partir de 'Ano' e 'Mes'
+data['data'] = pd.to_datetime(data[['Ano', 'Mes']].astype(str).agg('-'.join, axis=1))
+data.set_index('data', inplace=True)
 
-# Pré-processamento:
-# 1. Normalizar os dados
-scaler = MinMaxScaler()
-data[features] = scaler.fit_transform(data[features])
+# --- Pré-processamento ---
 
-# 2. Criar conjuntos de treinamento e teste
-train_data = data[:-36]  # Usar os últimos 36 meses para teste
-test_data = data[-36:]
-
-# 3. Criar conjuntos de dados para o modelo RNN (usando janelas deslizantes)
-def create_dataset(dataset, look_back=1):
-    X, Y = [], []
-    for i in range(len(dataset)-look_back-1):
-        a = dataset[i:(i+look_back), :]
-        X.append(a)
-        Y.append(dataset[i + look_back, target])
-    return np.array(X), np.array(Y)
-
-look_back = 12  # Número de meses a considerar como entrada para prever o próximo mês
-X_train, y_train = create_dataset(train_data.values, look_back)
-X_test, y_test = create_dataset(test_data.values, look_back)
-
-# 4. Definir o modelo RNN (LSTM neste exemplo)
-model = Sequential()
-model.add(LSTM(50, return_sequences=True, input_shape=(X_train.shape[1], X_train.shape[2])))
-model.add(LSTM(50))
-model.add(Dense(1))
-model.compile(loss='mean_squared_error', optimizer='adam')
-
-# Define a função de programação da taxa de aprendizado
-def scheduler(epoch, lr):
-    if epoch < 10:
-        return lr
-    else:
-        return lr * 0.9
-
-# Crie um objeto LearningRateScheduler
-lr_scheduler = LearningRateScheduler(scheduler)
-
-# 5. Treinar o modelo
-history = model.fit(X_train, y_train, epochs=100, batch_size=32, validation_data=(X_test, y_test),
-                    callbacks=[EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True), lr_scheduler],
-                    verbose=1)
-
-# 6. Avaliar o modelo
-loss = model.evaluate(X_test, y_test, verbose=0)
-print(f"Erro Médio Quadrático (MSE): {loss}")
-
-# 7. Fazer previsões
-y_pred = model.predict(X_test)
-
-# 8. Inverter a normalização para obter as previsões na escala original
-y_pred = scaler.inverse_transform(y_pred.reshape(-1, 1))
-y_test = scaler.inverse_transform(y_test.reshape(-1, 1))
-
-# 9. Plotar as previsões vs. valores reais
-plt.figure(figsize=(10, 6))
-plt.plot(y_test, label='Real')
-plt.plot(y_pred, label='Previsão')
-plt.title('Previsões de Evapotranspiração')
-plt.xlabel('Tempo')
-plt.ylabel('Evapotranspiração (mm/dia)')
-plt.legend()
+# 1. Verificar outliers (usar boxplots)
+data.boxplot(column=['Evaporação', 'TempMed', 'UmidRel', 'Insolação'])
 plt.show()
 
-# Plotar a curva de aprendizagem (perda e acurácia ao longo das épocas)
-plt.figure(figsize=(12, 4))
-plt.subplot(1, 2, 1)
-plt.plot(history.history['loss'], label='Perda de Treinamento')
-plt.plot(history.history['val_loss'], label='Perda de Validação')
-plt.title('Perda de Treinamento e Validação')
-plt.xlabel('Época')
-plt.ylabel('Perda')
-plt.legend()
+# 2. Lidar com outliers (opcional - remover outliers com base no boxplot)
+threshold = 1.5
+for col in ['Evaporação', 'TempMed', 'UmidRel', 'Insolação']:
+    Q1 = data[col].quantile(0.25)
+    Q3 = data[col].quantile(0.75)
+    IQR = Q3 - Q1
+    data = data[~((data[col] < (Q1 - threshold * IQR)) | (data[col] > (Q3 + threshold * IQR)))]
 
-plt.subplot(1, 2, 2)
-plt.plot(history.history['accuracy'], label='Acurácia de Treinamento')
-plt.plot(history.history['val_accuracy'], label='Acurácia de Validação')
-plt.title('Acurácia de Treinamento e Validação')
-plt.xlabel('Época')
-plt.ylabel('Acurácia')
+# 3. Verificar valores faltantes
+print("Valores faltantes:", data.isnull().sum())
+
+# 4. Lidar com valores faltantes (remover linhas com valores faltantes)
+data.dropna(inplace=True)
+
+# --- Preparar os dados para o modelo ---
+
+# 1. Separar variáveis explicativas (X) e variável resposta (y)
+X = data[['TempMed']]  # Usar apenas 'TempMed' como variável explicativa
+y = data['Evaporação']
+
+# 2. Dividir os dados em conjuntos de treinamento e teste
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# 3. Normalizar os dados (opcional, mas geralmente recomendado)
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# --- Criar e Treinar o Modelo ---
+
+# Criar o modelo de regressão linear
+model = LinearRegression()
+
+# Gerar a curva de aprendizagem
+train_sizes, train_scores, test_scores = learning_curve(
+    model, X_train, y_train, cv=5, scoring='neg_mean_squared_error', train_sizes=np.linspace(0.1, 1.0, 10)
+)
+
+# Calcular as médias e desvios padrão dos scores
+train_scores_mean = np.mean(train_scores, axis=1)
+train_scores_std = np.std(train_scores, axis=1)
+test_scores_mean = np.mean(test_scores, axis=1)
+test_scores_std = np.std(test_scores, axis=1)
+
+# Plotar a curva de aprendizagem
+plt.figure(figsize=(8, 6))
+plt.plot(train_sizes, train_scores_mean, 'o-', color='blue', label='Treinamento')
+plt.plot(train_sizes, test_scores_mean, 'o-', color='green', label='Validação')
+plt.fill_between(train_sizes, train_scores_mean - train_scores_std,
+                 train_scores_mean + train_scores_std, alpha=0.1, color='blue')
+plt.fill_between(train_sizes, test_scores_mean - test_scores_std,
+                 test_scores_mean + test_scores_std, alpha=0.1, color='green')
+plt.xlabel("Tamanho do Conjunto de Treinamento")
+plt.ylabel("MSE")
+plt.title("Curva de Aprendizagem do Modelo de Regressão")
+plt.legend(loc="best")
+plt.grid(True)
+plt.show()
+
+# Treinar o modelo
+model.fit(X_train, y_train)
+
+# Fazer previsões
+y_pred = model.predict(X_test)
+
+# Calcular métricas de avaliação
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+
+# Imprimir os resultados
+print("Erro Quadrático Médio:", mse)
+print("Coeficiente de Determinação (R²):", r2)
+
+# Salvar o modelo treinado
+filename = 'modelo_clima.sav'
+pickle.dump(model, open(filename, 'wb'))
+
+# --- Gráficos para Análise do Treinamento ---
+
+# 1. Gráfico de Dispersão (TempMed vs. Evaporação)
+plt.figure(figsize=(8, 6))
+plt.scatter(data["TempMed"], data["Evaporação"], s=20, c='blue', alpha=0.7)
+plt.xlabel("Temperatura Média (°C)")
+plt.ylabel("Evaporação (mm/dia)")
+plt.title("Relação entre Temperatura Média e Evaporação")
+plt.grid(True)
+plt.show()
+
+# 2. Histograma dos Resíduos (Modelo de Evaporação)
+residuals = y_test - y_pred
+plt.figure(figsize=(8, 6))
+plt.hist(residuals, bins=20, edgecolor='black')
+plt.xlabel("Resíduos")
+plt.ylabel("Frequência")
+plt.title("Histograma dos Resíduos do Modelo de Evaporação")
+plt.show()
+
+# 3. Gráfico de Previsões vs. Valores Reais (Modelo de Evaporação)
+plt.figure(figsize=(8, 6))
+plt.scatter(y_pred, y_test, s=20, c='green', alpha=0.7)
+plt.xlabel("Previsões de Evaporação (mm/dia)")
+plt.ylabel("Valores Reais de Evaporação (mm/dia)")
+plt.title("Previsões vs. Valores Reais do Modelo de Evaporação")
+plt.plot([min(y_test), max(y_test)], [min(y_test), max(y_test)], 'r--', label='Linha Ideal')
 plt.legend()
-plt.tight_layout()
+plt.grid(True)
 plt.show()
