@@ -5,16 +5,14 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plt
 import numpy as np
+from tensorflow.keras.callbacks import EarlyStopping, LearningRateScheduler
 
 # Carregar os dados
-data = pd.read_csv("dados1975-2015.csv",
-                  parse_dates=[['Ano', 'Mês']], # cria uma coluna de data a partir de 'Ano' e 'Mês'
-                  index_col=0, # Define a coluna de data como índice
-                  sep="," # Define o separador das colunas como ',' se necessário
-                  )
+data = pd.read_csv("dados1975-2015.csv", sep=",")  # Assumindo que o separador é ','
 
-# Renomear a coluna de data
-data.index.names = ['data']
+# Criar uma coluna de data a partir de 'Ano' e 'Mês'
+data['data'] = pd.to_datetime(data[['Ano', 'Mês']])
+data.set_index('data', inplace=True) # Define a coluna de data como índice
 
 # Selecionar as variáveis relevantes
 features = ["TempMed", "UmidRel", "Insolação"]
@@ -49,8 +47,20 @@ model.add(LSTM(50))
 model.add(Dense(1))
 model.compile(loss='mean_squared_error', optimizer='adam')
 
+# Define a função de programação da taxa de aprendizado
+def scheduler(epoch, lr):
+    if epoch < 10:
+        return lr
+    else:
+        return lr * 0.9
+
+# Crie um objeto LearningRateScheduler
+lr_scheduler = LearningRateScheduler(scheduler)
+
 # 5. Treinar o modelo
-history = model.fit(X_train, y_train, epochs=100, batch_size=32, validation_data=(X_test, y_test), verbose=1)
+history = model.fit(X_train, y_train, epochs=100, batch_size=32, validation_data=(X_test, y_test),
+                    callbacks=[EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True), lr_scheduler],
+                    verbose=1)
 
 # 6. Avaliar o modelo
 loss = model.evaluate(X_test, y_test, verbose=0)
@@ -71,4 +81,24 @@ plt.title('Previsões de Evapotranspiração')
 plt.xlabel('Tempo')
 plt.ylabel('Evapotranspiração (mm/dia)')
 plt.legend()
+plt.show()
+
+# Plotar a curva de aprendizagem (perda e acurácia ao longo das épocas)
+plt.figure(figsize=(12, 4))
+plt.subplot(1, 2, 1)
+plt.plot(history.history['loss'], label='Perda de Treinamento')
+plt.plot(history.history['val_loss'], label='Perda de Validação')
+plt.title('Perda de Treinamento e Validação')
+plt.xlabel('Época')
+plt.ylabel('Perda')
+plt.legend()
+
+plt.subplot(1, 2, 2)
+plt.plot(history.history['accuracy'], label='Acurácia de Treinamento')
+plt.plot(history.history['val_accuracy'], label='Acurácia de Validação')
+plt.title('Acurácia de Treinamento e Validação')
+plt.xlabel('Época')
+plt.ylabel('Acurácia')
+plt.legend()
+plt.tight_layout()
 plt.show()
