@@ -1,11 +1,12 @@
 import pandas as pd
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.regularizers import l2
-from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
+import numpy as np 
 
 # Carregue os dados combinados
 dados_combinados = pd.read_csv('dados_combinados.csv')
@@ -16,14 +17,24 @@ variaveis_entrada = ['satelite_solo', 'satelite_agua', 'satelite_vegetacao', 'um
                     'precipitacao_previsao', 'chuva_historica']
 variavel_saida = 'irrigacao_previsao'
 
-# Pré-processamento dos dados
+# Crie um objeto LabelEncoder
+label_encoder = LabelEncoder()
+
+# Converta a coluna 'estagio_cultura' para valores numéricos
+dados_combinados['estagio_cultura'] = label_encoder.fit_transform(dados_combinados['estagio_cultura'])
+
+# Crie um objeto MinMaxScaler
 scaler = MinMaxScaler()
+
+# Normalize as variáveis de entrada
 dados_combinados[variaveis_entrada] = scaler.fit_transform(dados_combinados[variaveis_entrada])
+
+# Normalize a variável de saída
 dados_combinados[variavel_saida] = scaler.fit_transform(dados_combinados[[variavel_saida]])
 
 # Crie o modelo LSTM
 modelo_conjunto = Sequential()
-modelo_conjunto.add(LSTM(50, return_sequences=True, input_shape=(9, 1), recurrent_regularizer=l2(0.01)))  # 9 é o número de features de entrada
+modelo_conjunto.add(LSTM(50, return_sequences=True, input_shape=(9, 1), recurrent_regularizer=l2(0.01)))
 modelo_conjunto.add(Dropout(0.2))
 modelo_conjunto.add(LSTM(50, recurrent_regularizer=l2(0.01)))
 modelo_conjunto.add(Dropout(0.2))

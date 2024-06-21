@@ -5,7 +5,7 @@ import random
 # Define o número de linhas para cada conjunto de dados
 num_linhas = 1000
 
-# Função de dados dentro de um intervalo
+# Função para gerar dados aleatórios dentro de um intervalo
 def gerar_dados_aleatorios(minimo, maximo, num_linhas):
   return np.random.uniform(minimo, maximo, num_linhas)
 
@@ -34,8 +34,13 @@ dados_temporais = pd.DataFrame({
     'chuva_historica': gerar_dados_aleatorios(0, 100, num_linhas),
 })
 
+# Gera dados aleatórios para a irrigação (entre 0 e 1)
+dados_combinados = pd.DataFrame({
+    'irrigacao_previsao': gerar_dados_aleatorios(0, 1, num_linhas)
+})
+
 # Combina os dados usando pd.concat (eixo 1 para combinar as colunas)
-dados_combinados = pd.concat([dados_satelite, dados_sensores, dados_cultura, dados_estacao, dados_temporais], axis=1)
+dados_combinados = pd.concat([dados_satelite, dados_sensores, dados_cultura, dados_estacao, dados_temporais, dados_combinados], axis=1)
 
 # Salva os dados combinados em um novo arquivo CSV
 dados_combinados.to_csv('dados_combinados.csv', index=False)
