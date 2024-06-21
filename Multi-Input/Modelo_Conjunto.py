@@ -5,15 +5,16 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.regularizers import l2
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import TimeSeriesSplit
+from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
 
-# Carregue os dados combinados de todos os modelos
-dados_combinados = pd.read_csv('dados_combinados.csv')  # Substitua pelo nome do seu arquivo CSV
+# Carregue os dados combinados
+dados_combinados = pd.read_csv('dados_combinados.csv')
 
 # Defina as variáveis de entrada e saída
 variaveis_entrada = ['satelite_solo', 'satelite_agua', 'satelite_vegetacao', 'umidade_solo',
                     'condutividade_eletrica', 'temperatura_solo', 'estagio_cultura',
-                    'precipitacao_previsao', 'chuva_historica']  # Substitua pelas colunas relevantes
-variavel_saida = 'irrigacao_previsao'  # Substitua pela coluna de previsão de irrigação
+                    'precipitacao_previsao', 'chuva_historica']
+variavel_saida = 'irrigacao_previsao'
 
 # Pré-processamento dos dados
 scaler = MinMaxScaler()
@@ -22,8 +23,7 @@ dados_combinados[variavel_saida] = scaler.fit_transform(dados_combinados[[variav
 
 # Crie o modelo LSTM
 modelo_conjunto = Sequential()
-modelo_conjunto.add(LSTM(50, return_sequences=True, input_shape=(dimensao_entrada, 1),
-    recurrent_regularizer=l2(0.01)))
+modelo_conjunto.add(LSTM(50, return_sequences=True, input_shape=(9, 1), recurrent_regularizer=l2(0.01)))  # 9 é o número de features de entrada
 modelo_conjunto.add(Dropout(0.2))
 modelo_conjunto.add(LSTM(50, recurrent_regularizer=l2(0.01)))
 modelo_conjunto.add(Dropout(0.2))
@@ -31,7 +31,7 @@ modelo_conjunto.add(Dense(1))
 modelo_conjunto.compile(loss='mean_squared_error', optimizer=Adam(learning_rate=0.001))
 
 # Treinamento com validação cruzada
-tscv = TimeSeriesSplit(n_splits=5)  # Ajuste n_splits para o número de folds desejado
+tscv = TimeSeriesSplit(n_splits=5)
 rmse_scores = []
 mae_scores = []
 mape_scores = []
