@@ -6,7 +6,8 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.regularizers import l2
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
-import numpy as np 
+import numpy as np
+import matplotlib.pyplot as plt
 
 # Carregue os dados combinados
 dados_combinados = pd.read_csv('dados_combinados.csv')
@@ -47,12 +48,16 @@ rmse_scores = []
 mae_scores = []
 mape_scores = []
 
+# Lista para armazenar a perda de treinamento e validação em cada fold
+loss_train = []
+loss_val = []
+
 for train_index, test_index in tscv.split(dados_combinados):
     X_treinamento, X_teste = dados_combinados[variaveis_entrada].iloc[train_index], dados_combinados[variaveis_entrada].iloc[test_index]
     y_treinamento, y_teste = dados_combinados[variavel_saida].iloc[train_index], dados_combinados[variavel_saida].iloc[test_index]
 
     # Treine o modelo
-    modelo_conjunto.fit(X_treinamento, y_treinamento, epochs=100, batch_size=32, verbose=1)
+    history = modelo_conjunto.fit(X_treinamento, y_treinamento, epochs=100, batch_size=32, validation_data=(X_teste, y_teste), verbose=0)
 
     # Faça previsões no conjunto de teste
     y_previsao = modelo_conjunto.predict(X_teste)
@@ -66,6 +71,10 @@ for train_index, test_index in tscv.split(dados_combinados):
     mae_scores.append(mae)
     mape_scores.append(mape)
 
+    # Armazene a perda de treinamento e validação para cada fold
+    loss_train.append(history.history['loss'])
+    loss_val.append(history.history['val_loss'])
+
 # Imprima as métricas de desempenho
 print(f'RMSE: {np.mean(rmse_scores)}')
 print(f'MAE: {np.mean(mae_scores)}')
@@ -73,3 +82,25 @@ print(f'MAPE: {np.mean(mape_scores)}')
 
 # Salve o modelo treinado
 modelo_conjunto.save('modelo_conjunto.h5')
+
+# Plota a curva de aprendizagem
+plt.figure(figsize=(10, 6))
+plt.plot(np.mean(loss_train, axis=0), label='Perda de Treinamento')
+plt.plot(np.mean(loss_val, axis=0), label='Perda de Validação')
+plt.title('Curva de Aprendizagem do Modelo LSTM')
+plt.xlabel('Época')
+plt.ylabel('Perda')
+plt.legend()
+plt.show()
+
+# Plota a perda ao longo das épocas para cada fold
+plt.figure(figsize=(10, 6))
+for i in range(len(loss_train)):
+    plt.plot(loss_train[i], label=f'Fold {i+1} - Treinamento')
+    plt.plot(loss_val[i], label=f'Fold {i+1} - Validação')
+
+plt.title('Perda ao Longo das Épocas (Validação Cruzada)')
+plt.xlabel('Época')
+plt.ylabel('Perda')
+plt.legend()
+plt.show()
