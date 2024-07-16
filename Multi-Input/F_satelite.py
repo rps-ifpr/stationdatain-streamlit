@@ -14,10 +14,10 @@ import matplotlib.pyplot as plt
 import streamlit as st
 
 # Diretório de entrada com as imagens
-input_dir = "C:/IFPR-CONTEUDO/GITHUB/stationdatain-streamlit/Multi-Input/preprocessed_images"
+input_dir = "C:/Users/Usuário/Documents/GitHub/stationdatain-streamlit/Multi-Input/preprocessed_images"
 
 # Diretório para os arquivos de label
-labels_dir = "C:/IFPR-CONTEUDO/GITHUB/stationdatain-streamlit/Multi-Input/preprocessed_images/labels"
+labels_dir = "C:/Users/Usuário/Documents/GitHub/stationdatain-streamlit/Multi-Input/preprocessed_images/labels"
 
 # Tamanho do conjunto de dados
 num_images = 21
