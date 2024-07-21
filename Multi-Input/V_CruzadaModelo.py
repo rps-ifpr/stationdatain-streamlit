@@ -14,8 +14,8 @@ dados_combinados = pd.read_csv('dados_combinados.csv')
 
 # Defina as variáveis de entrada e saída
 variaveis_entrada = ['satelite_solo', 'satelite_agua', 'satelite_vegetacao', 'umidade_solo',
-                    'condutividade_eletrica', 'temperatura_solo', 'estagio_cultura',
-                    'precipitacao_previsao', 'chuva_historica']
+                     'condutividade_eletrica', 'temperatura_solo', 'estagio_cultura',
+                     'precipitacao_previsao', 'chuva_historica']
 variavel_saida = 'irrigacao_previsao'
 
 # Crie um objeto LabelEncoder
@@ -52,12 +52,20 @@ mape_scores = []
 loss_train = []
 loss_val = []
 
-for train_index, test_index in tscv.split(dados_combinados):
-    X_treinamento, X_teste = dados_combinados[variaveis_entrada].iloc[train_index], dados_combinados[variaveis_entrada].iloc[test_index]
-    y_treinamento, y_teste = dados_combinados[variavel_saida].iloc[train_index], dados_combinados[variavel_saida].iloc[test_index]
+# Plota a curva de aprendizagem de cada fold em um único gráfico
+fig, axes = plt.subplots(5, 1, sharex=True, figsize=(10, 8))
+fig.suptitle('Learning Curve (Cross Validation) for each Fold', fontsize=16)
 
-    # Treine o modelo
-    history = modelo_conjunto.fit(X_treinamento, y_treinamento, epochs=100, batch_size=32, validation_data=(X_teste, y_teste), verbose=0)
+for i, (train_index, test_index) in enumerate(tscv.split(dados_combinados)):
+    # Separe os dados
+    X_treinamento, X_teste = dados_combinados[variaveis_entrada].iloc[train_index], \
+    dados_combinados[variaveis_entrada].iloc[test_index]
+    y_treinamento, y_teste = dados_combinados[variavel_saida].iloc[train_index], dados_combinados[variavel_saida].iloc[
+        test_index]
+
+    # Treine o modelo (utilizando verbose=0 para evitar mensagens de treino na tela)
+    history = modelo_conjunto.fit(X_treinamento, y_treinamento, epochs=100, batch_size=32,
+                                  validation_data=(X_teste, y_teste), verbose=0)
 
     # Faça previsões no conjunto de teste
     y_previsao = modelo_conjunto.predict(X_teste)
@@ -75,6 +83,19 @@ for train_index, test_index in tscv.split(dados_combinados):
     loss_train.append(history.history['loss'])
     loss_val.append(history.history['val_loss'])
 
+    # Plota a perda do fold atual
+    axes[i].plot(history.history['loss'], label=f'Training {i + 1}')
+    axes[i].plot(history.history['val_loss'], label=f'Validation {i + 1}')
+    axes[i].set_ylabel('Loss')
+    axes[i].legend()
+
+# Define o label do eixo X (comparti lhado) e o título para o último fold
+axes[-1].set_xlabel('Epoch')
+axes[-2].set_title('k-Fold Cross Validation - Loss in each Epoch', fontsize=16)
+
+plt.tight_layout()  # Ajusta o layout para evitar sobreposição
+plt.show()
+
 # Imprima as métricas de desempenho
 print(f'RMSE: {np.mean(rmse_scores)}')
 print(f'MAE: {np.mean(mae_scores)}')
@@ -82,25 +103,3 @@ print(f'MAPE: {np.mean(mape_scores)}')
 
 # Salve o modelo treinado
 modelo_conjunto.save('modelo_conjunto.h5')
-
-# Plota a curva de aprendizagem
-plt.figure(figsize=(10, 6))
-plt.plot(np.mean(loss_train, axis=0), label='Loss of Training')
-plt.plot(np.mean(loss_val, axis=0), label='Loss of Validation')
-plt.title('Curva de Aprendizagem do Modelo LSTM')
-plt.xlabel('epoch')
-plt.ylabel('Loss')
-plt.legend()
-plt.show()
-
-# Plota a perda ao longo das épocas para cada fold
-plt.figure(figsize=(10, 6))
-for i in range(len(loss_train)):
-    plt.plot(loss_train[i], label=f'Fold {i+1} - Training')
-    plt.plot(loss_val[i], label=f'Fold {i+1} - Validation')
-
-plt.title('Loss Over Epochs (Cross Validation)')
-plt.xlabel('epoch')
-plt.ylabel('loss')
-plt.legend()
-plt.show()

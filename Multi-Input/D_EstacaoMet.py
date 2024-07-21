@@ -48,15 +48,15 @@ test_scores_std = np.std(test_scores, axis=1)
 
 # Plotar a curva de aprendizagem
 plt.figure(figsize=(8, 6))
-plt.plot(train_sizes, train_scores_mean, 'o-', color='blue', label='Treinamento')
-plt.plot(train_sizes, test_scores_mean, 'o-', color='green', label='Validação')
+plt.plot(train_sizes, train_scores_mean, 'o-', color='blue', label='Training')
+plt.plot(train_sizes, test_scores_mean, 'o-', color='green', label='Validation')
 plt.fill_between(train_sizes, train_scores_mean - train_scores_std,
                  train_scores_mean + train_scores_std, alpha=0.1, color='blue')
 plt.fill_between(train_sizes, test_scores_mean - test_scores_std,
                  test_scores_mean + test_scores_std, alpha=0.1, color='green')
-plt.xlabel("Tamanho do Conjunto de Treinamento")
+plt.xlabel("Training Set Size")
 plt.ylabel("MSE")
-plt.title("Curva de Aprendizagem do Modelo de Regressão")
+plt.title("Regression Model Learning Curve")
 plt.legend(loc="best")
 plt.grid(True)
 plt.show()

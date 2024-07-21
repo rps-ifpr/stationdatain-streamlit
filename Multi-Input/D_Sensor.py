@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
 
 # Função para pré-processar os dados
 def preprocessar_dados(df):
@@ -20,10 +21,12 @@ def preprocessar_dados(df):
 # Interface Streamlit
 st.title("Pré-processamento de Dados de Sensores de Solo")
 
-df = pd.read_csv('dados_sensor.csv', parse_dates=['data'])  # Lê o arquivo CSV e converte a coluna 'data' para o tipo Timestamp
+# Ler o arquivo CSV e converter a coluna 'data' para o tipo Timestamp
+df = pd.read_csv('dados_sensor.csv', parse_dates=['data'])
 
 # Criar uma coluna para o estágio de desenvolvimento
-df['estagio'] = pd.Categorical(df['estagio'], categories=['Crescimento', 'Floração', 'Início da Floração', 'Pico da Floração', 'Fim da Floração', 'Colheita'], ordered=True)
+if 'estagio' in df.columns:
+    df['estagio'] = pd.Categorical(df['estagio'], categories=['Crescimento', 'Floração', 'Início da Floração', 'Pico da Floração', 'Fim da Floração', 'Colheita'], ordered=True)
 
 # Pré-processar os dados
 df_preprocessado = preprocessar_dados(df.copy())
@@ -56,7 +59,7 @@ st.pyplot(fig)
 # Análise Mensal - Agrupamento por Mês e cálculo da média
 st.subheader("Análise Mensal dos Dados")
 df['mes'] = df['data'].dt.month
-df_preprocessado['mes'] = df_preprocessado['data'].dt.month  # Adicione a coluna 'mes' ao df_preprocessado
+df_preprocessado['mes'] = df_preprocessado['data'].dt.month  # Adicionar a coluna 'mes' ao df_preprocessado
 
 # Criar Gráficos Mensais
 fig, axs = plt.subplots(3, 1, figsize=(10, 10))
@@ -85,7 +88,6 @@ for mes in range(1, 13):
     axs[2].plot(df_mensal_bruto.index, df_mensal_bruto['temperatura_solo'], label=f"Bruto - {meses[mes - 1]}")
     axs[2].plot(df_mensal_preprocessado.index, df_mensal_preprocessado['temperatura_solo'], label=f"Pré-processado - {meses[mes - 1]}")
 
-
 # Ajustar espaçamento entre os subplots
 plt.tight_layout()
 
@@ -94,7 +96,6 @@ st.pyplot(fig)
 
 # Classificação dos Dados
 st.subheader("Classificação dos Dados")
-from sklearn.cluster import KMeans
 
 # Definir o número de clusters (classes)
 n_clusters = 3  # Ajustar conforme necessário
@@ -117,16 +118,16 @@ plt.figure(figsize=(10, 6))
 
 # Plotar os clusters usando diferentes cores para cada classe
 plt.scatter(df_preprocessado['umidade_solo'], df_preprocessado['condutividade_eletrica'], c=df_preprocessado['classe'], cmap='viridis')
-plt.xlabel("Umidade do Solo (%)")
-plt.ylabel("Condutividade Elétrica (mS/cm)")
-plt.title("Clusters de Dados de Sensores de Solo")
+plt.xlabel("Soil Moisture (%)")
+plt.ylabel("Electric conductivity (mS/cm)")
+plt.title("Soil Sensor Data Clusters")
 
 st.pyplot(plt)
 
 # Criar tabela com estatísticas descritivas de cada cluster
 st.subheader("Estatísticas Descritivas dos Clusters")
 df_cluster_stats = df_preprocessado.groupby('classe').agg(media_umidade=('umidade_solo', 'mean'),
-                                                 media_condutividade=('condutividade_eletrica', 'mean'),
-                                                 media_temperatura=('temperatura_solo', 'mean'))
+                                                          media_condutividade=('condutividade_eletrica', 'mean'),
+                                                          media_temperatura=('temperatura_solo', 'mean'))
 
 st.dataframe(df_cluster_stats)
