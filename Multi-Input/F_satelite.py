@@ -20,7 +20,7 @@ input_dir = "C:/Users/Usuário/Documents/GitHub/stationdatain-streamlit/Multi-In
 labels_dir = "C:/Users/Usuário/Documents/GitHub/stationdatain-streamlit/Multi-Input/preprocessed_images/labels"
 
 # Tamanho do conjunto de dados
-num_images = 21
+num_images = 61
 
 # Carregar as imagens e labels
 def carregar_dados(input_dir, labels_dir, num_images):
