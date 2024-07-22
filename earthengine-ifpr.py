@@ -5,7 +5,7 @@ import folium
 # Inicialize a API do Google Earth Engine
 ee.Initialize()
 
-# Defina a região de interesse
+# Definição da região
 geometry = ee.Geometry.Polygon(
     [[[-53.78835325312135, -25.68427745715154],
       [-53.78531699251649, -25.68517665067112],
